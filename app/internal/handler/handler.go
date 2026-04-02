@@ -1,0 +1,192 @@
+package handler
+
+import (
+	"docker-pull-manager/internal/config"
+	"docker-pull-manager/internal/docker"
+	"docker-pull-manager/internal/models"
+	"docker-pull-manager/internal/service"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+type Handler struct {
+	imageService   *service.ImageService
+	dockerService  *docker.DockerService
+	webhookService *service.WebhookService
+	cfg            *config.Config
+}
+
+func NewHandler(imageService *service.ImageService, dockerService *docker.DockerService, webhookService *service.WebhookService, cfg *config.Config) *Handler {
+	return &Handler{
+		imageService:   imageService,
+		dockerService:  dockerService,
+		webhookService: webhookService,
+		cfg:            cfg,
+	}
+}
+
+func (h *Handler) ListImages(c *gin.Context) {
+	images, err := h.imageService.GetImages()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, images)
+}
+
+func (h *Handler) CreateImage(c *gin.Context) {
+	var req models.CreateImageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	image, err := h.imageService.CreateImage(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, image)
+}
+
+func (h *Handler) DeleteImage(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	if err := h.imageService.DeleteImage(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+}
+
+func (h *Handler) GetImageLogs(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	logs, err := h.imageService.GetImageLogs(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, logs)
+}
+
+func (h *Handler) PullImage(c *gin.Context) {
+	_, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	go h.imageService.ProcessPendingImages()
+
+	c.JSON(http.StatusOK, gin.H{"message": "pull started"})
+}
+
+func (h *Handler) ExportImage(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	path, err := h.imageService.ExportImage(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"path": path})
+}
+
+func (h *Handler) GetConfig(c *gin.Context) {
+	c.JSON(http.StatusOK, h.cfg)
+}
+
+func (h *Handler) UpdateConfig(c *gin.Context) {
+	var req models.UpdateConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.ExportPath != "" {
+		h.cfg.ExportPath = req.ExportPath
+	}
+	if req.RetryMaxAttempts >= 0 {
+		h.cfg.RetryMaxAttempts = req.RetryMaxAttempts
+	}
+	if req.RetryIntervalSec > 0 {
+		h.cfg.RetryIntervalSec = req.RetryIntervalSec
+	}
+	h.cfg.EnableWebhook = req.EnableWebhook
+	if req.WebhookURL != "" {
+		h.cfg.WebhookURL = req.WebhookURL
+	}
+	if req.WebhookType != "" {
+		h.cfg.WebhookType = req.WebhookType
+	}
+	if req.ConcurrentPulls > 0 {
+		h.cfg.ConcurrentPulls = req.ConcurrentPulls
+	}
+	if req.DefaultPlatform != "" {
+		h.cfg.DefaultPlatform = req.DefaultPlatform
+	}
+	if req.GzipCompression > 0 && req.GzipCompression <= 9 {
+		h.cfg.GzipCompression = req.GzipCompression
+	}
+
+	if err := h.cfg.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.cfg)
+}
+
+func (h *Handler) TestWebhook(c *gin.Context) {
+	if err := h.webhookService.TestWebhook(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "webhook test sent"})
+}
+
+func (h *Handler) GetStats(c *gin.Context) {
+	images, err := h.imageService.GetImages()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var total, success, failed, pending int
+	for _, img := range images {
+		total++
+		switch img.Status {
+		case "success":
+			success++
+		case "failed":
+			failed++
+		case "pending", "pulling":
+			pending++
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total":   total,
+		"success": success,
+		"failed":  failed,
+		"pending": pending,
+	})
+}
