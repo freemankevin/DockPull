@@ -141,3 +141,6 @@ vite.config.ts.timestamp-*
 # Go binaries
 *.exe
 server
+
+# Kilo CLI local config
+.kilo/
