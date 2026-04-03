@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { Sun, Moon, Package, Settings, BarChart3, LogOut, Camera } from 'lucide-react'
+import { useRef } from 'react'
+import { Package, Settings, BarChart3, LogOut, Camera } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
 import Images from './pages/Images'
 import SettingsPage from './pages/Settings'
@@ -15,13 +15,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 function MainApp() {
   const { user, logout, updateAvatar } = useAuth()
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-    document.documentElement.classList.toggle('dark')
-  }
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -53,7 +47,7 @@ function MainApp() {
   }
 
   return (
-    <div className={`app ${isDarkMode ? 'dark' : ''}`}>
+    <div className="app">
       <nav className="sidebar">
         <div className="logo">
           <img src="/logo.png" alt="DockPull" className="logo-image" />
@@ -104,9 +98,6 @@ function MainApp() {
               <div className="user-name">{user?.username || 'Admin'}</div>
               <div className="user-role">Administrator</div>
             </div>
-            <button className="theme-toggle-small" onClick={toggleDarkMode} title="Toggle theme">
-              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
             <button className="logout-btn" onClick={logout} title="Sign out">
               <LogOut size={16} />
             </button>
