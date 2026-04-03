@@ -30,31 +30,41 @@ export default function Login() {
   }
 
   const handleSSO = () => {
+    // SSO integration placeholder
     console.log('SSO login clicked')
   }
 
   return (
     <div className="login-container">
-      <div className="login-background">
+      {/* ── Left panel ── */}
+      <section className="login-background">
         <img src="/background.jpg" alt="Background" className="login-bg-image" />
         <div className="login-overlay" />
-        <div className="login-brand">
-          <h1 className="login-title">DockPull</h1>
-          <p className="login-subtitle">A lightweight Docker image management system for pulling and organizing container images with ease</p>
+        <div className="login-left-content">
+          <div className="login-brand">
+            <div className="login-title">DockPull</div>
+            <p className="login-subtitle">
+              A lightweight Docker image management system for pulling and organizing container images with ease
+            </p>
+          </div>
+          <div className="login-version">© 2026 DockPull — v2.4.1</div>
         </div>
         <div className="login-dots">
           {Array.from({ length: 25 }).map((_, i) => <span key={i} />)}
         </div>
-        <div className="login-version">© 2026 DockPull — v2.4.1</div>
-      </div>
-      <div className="login-form-container">
+      </section>
+
+      {/* ── Right panel ── */}
+      <section className="login-form-container">
         <div className="login-form-wrapper">
           <div className="login-form-header">
             <h2>Sign In</h2>
             <p>Enter your credentials to access the system</p>
           </div>
+
           <form onSubmit={handleSubmit} className="login-form">
             {error && <div className="login-error">{error}</div>}
+
             <div className="login-field">
               <label htmlFor="username">Username</label>
               <div className="login-input-wrapper">
@@ -70,6 +80,7 @@ export default function Login() {
                 />
               </div>
             </div>
+
             <div className="login-field">
               <label htmlFor="password">Password</label>
               <div className="login-input-wrapper">
@@ -94,6 +105,7 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
             <div className="login-row-meta">
               <label className="login-remember">
                 <input
@@ -105,15 +117,18 @@ export default function Login() {
               </label>
               <a href="#" className="login-forgot">Forgot password?</a>
             </div>
+
             <button type="submit" className="login-submit" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
           <div className="login-divider">
             <div className="login-divider-line" />
             <span className="login-divider-text">or</span>
             <div className="login-divider-line" />
           </div>
+
           <button type="button" className="login-sso-btn" onClick={handleSSO}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -123,11 +138,12 @@ export default function Login() {
             </svg>
             Continue with SSO
           </button>
+
           <p className="login-form-footer">
             New to DockPull? <a href="#">Request access</a>
           </p>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

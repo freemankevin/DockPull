@@ -1,18 +1,34 @@
 import { useState } from 'react'
-import { Save, TestTube, Folder } from 'lucide-react'
+import { Save, FlaskConical, Folder, CheckCircle, AlertCircle } from 'lucide-react'
 import { useConfig } from '../hooks/useConfig'
 import { webhookApi } from '../api'
+
+type ToastType = 'success' | 'error' | null
 
 export default function Settings() {
   const { config, loading, updateConfig } = useConfig()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<any>({})
+  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 3500)
+  }
 
   if (loading || !config) {
     return (
-      <div className="content-box">
-        <div className="empty-state">
-          <p>Loading...</p>
+      <div>
+        <div className="page-header">
+          <h1>Settings</h1>
+        </div>
+        <div className="content-box">
+          <div className="empty-state">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', color: 'var(--text-muted)' }}>
+              <div className="spin" style={{ width: '16px', height: '16px', border: '2px solid var(--border-color)', borderTopColor: 'var(--purple-500)', borderRadius: '50%' }} />
+              Loading configuration...
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -21,30 +37,34 @@ export default function Settings() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    await updateConfig({ ...config, ...formData })
-    setSaving(false)
-    setFormData({})
-    alert('Settings saved successfully')
+    try {
+      await updateConfig({ ...config, ...formData })
+      setFormData({})
+      showToast('success', 'Settings saved successfully')
+    } catch {
+      showToast('error', 'Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleTestWebhook = async () => {
     try {
       await webhookApi.test()
-      alert('Test webhook sent successfully')
+      showToast('success', 'Test webhook sent successfully')
     } catch (err: any) {
-      alert('Failed to send: ' + err.message)
+      showToast('error', 'Failed to send: ' + err.message)
     }
   }
 
   const handleBrowseFolder = async () => {
     try {
-      // @ts-ignore - showDirectoryPicker is a modern API
+      // @ts-ignore
       const dirHandle = await window.showDirectoryPicker?.()
       if (dirHandle) {
-        const path = dirHandle.name
-        setFormData({ ...formData, export_path: path })
+        setFormData({ ...formData, export_path: dirHandle.name })
       }
-    } catch (err) {
+    } catch {
       // User cancelled or API not supported
     }
   }
@@ -53,12 +73,45 @@ export default function Settings() {
 
   return (
     <div>
+      {/* ── Page Header ── */}
       <div className="page-header">
         <h1>Settings</h1>
       </div>
 
+      {/* ── Toast ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px 16px',
+          borderRadius: 'var(--radius-lg)',
+          background: toast.type === 'success' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+          border: `1px solid ${toast.type === 'success' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+          color: toast.type === 'success' ? 'var(--green-500)' : 'var(--red-500)',
+          fontSize: '13px',
+          fontWeight: 500,
+          boxShadow: 'var(--shadow-lg)',
+          animation: 'fadeIn 0.2s ease',
+          backdropFilter: 'blur(8px)',
+        }}>
+          {toast.type === 'success'
+            ? <CheckCircle size={15} />
+            : <AlertCircle size={15} />
+          }
+          {toast.message}
+        </div>
+      )}
+
+      {/* ── Settings Form ── */}
       <div className="content-box">
         <form onSubmit={handleSubmit}>
+
+          {/* General */}
           <div className="settings-section">
             <h3 className="section-title">General</h3>
 
@@ -68,7 +121,7 @@ export default function Settings() {
                 <input
                   type="text"
                   className="form-control"
-                  value={getValue('export_path')}
+                  value={getValue('export_path') || ''}
                   onChange={(e) => setFormData({ ...formData, export_path: e.target.value })}
                   placeholder="/path/to/exports"
                 />
@@ -78,7 +131,7 @@ export default function Settings() {
                   onClick={handleBrowseFolder}
                   title="Browse folder"
                 >
-                  <Folder size={16} />
+                  <Folder size={14} />
                 </button>
               </div>
             </div>
@@ -87,7 +140,7 @@ export default function Settings() {
               <label>Default Platform</label>
               <select
                 className="form-control"
-                value={getValue('default_platform')}
+                value={getValue('default_platform') || 'linux/amd64'}
                 onChange={(e) => setFormData({ ...formData, default_platform: e.target.value })}
               >
                 <option value="linux/amd64">linux/amd64</option>
@@ -103,18 +156,18 @@ export default function Settings() {
                 <input
                   type="number"
                   className="form-control"
-                  value={getValue('concurrent_pulls')}
+                  value={getValue('concurrent_pulls') ?? 3}
                   onChange={(e) => setFormData({ ...formData, concurrent_pulls: parseInt(e.target.value) })}
                   min={1}
                   max={10}
                 />
               </div>
               <div className="form-group">
-                <label>Gzip Compression (1-9)</label>
+                <label>Gzip Compression (1–9)</label>
                 <input
                   type="number"
                   className="form-control"
-                  value={getValue('gzip_compression')}
+                  value={getValue('gzip_compression') ?? 6}
                   onChange={(e) => setFormData({ ...formData, gzip_compression: parseInt(e.target.value) })}
                   min={1}
                   max={9}
@@ -123,6 +176,7 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Retry */}
           <div className="settings-section">
             <h3 className="section-title">Retry Settings</h3>
 
@@ -132,7 +186,7 @@ export default function Settings() {
                 <input
                   type="number"
                   className="form-control"
-                  value={getValue('retry_max_attempts')}
+                  value={getValue('retry_max_attempts') ?? 3}
                   onChange={(e) => setFormData({ ...formData, retry_max_attempts: parseInt(e.target.value) })}
                   min={0}
                 />
@@ -142,7 +196,7 @@ export default function Settings() {
                 <input
                   type="number"
                   className="form-control"
-                  value={getValue('retry_interval_sec')}
+                  value={getValue('retry_interval_sec') ?? 30}
                   onChange={(e) => setFormData({ ...formData, retry_interval_sec: parseInt(e.target.value) })}
                   min={1}
                 />
@@ -150,6 +204,7 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Webhook */}
           <div className="settings-section">
             <h3 className="section-title">Webhook Notifications</h3>
 
@@ -157,7 +212,7 @@ export default function Settings() {
               <label className="checkbox-label">
                 <input
                   type="checkbox"
-                  checked={getValue('enable_webhook')}
+                  checked={getValue('enable_webhook') || false}
                   onChange={(e) => setFormData({ ...formData, enable_webhook: e.target.checked })}
                 />
                 Enable webhook notifications
@@ -168,7 +223,7 @@ export default function Settings() {
               <label>Webhook Type</label>
               <select
                 className="form-control"
-                value={getValue('webhook_type')}
+                value={getValue('webhook_type') || 'dingtalk'}
                 onChange={(e) => setFormData({ ...formData, webhook_type: e.target.value })}
                 disabled={!getValue('enable_webhook')}
               >
@@ -178,12 +233,12 @@ export default function Settings() {
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Webhook URL</label>
               <input
                 type="text"
                 className="form-control"
-                value={getValue('webhook_url')}
+                value={getValue('webhook_url') || ''}
                 onChange={(e) => setFormData({ ...formData, webhook_url: e.target.value })}
                 placeholder="https://..."
                 disabled={!getValue('enable_webhook')}
@@ -191,9 +246,11 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Actions */}
           <div className="button-group">
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              <Save size={16} /> {saving ? 'Saving...' : 'Save Settings'}
+              <Save size={14} />
+              {saving ? 'Saving...' : 'Save Settings'}
             </button>
             <button
               type="button"
@@ -201,7 +258,8 @@ export default function Settings() {
               onClick={handleTestWebhook}
               disabled={!getValue('enable_webhook')}
             >
-              <TestTube size={16} /> Test Webhook
+              <FlaskConical size={14} />
+              Test Webhook
             </button>
           </div>
         </form>

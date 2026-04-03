@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Package, Settings, BarChart3, LogOut, Camera } from 'lucide-react'
+import { Package, Settings, BarChart3, LogOut, Camera, Container } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
 import Images from './pages/Images'
 import SettingsPage from './pages/Settings'
@@ -48,34 +48,40 @@ function MainApp() {
 
   return (
     <div className="app">
+      {/* ── Sidebar ── */}
       <nav className="sidebar">
+        {/* Brand */}
         <div className="logo">
-          <img src="/logo.png" alt="DockPull" className="logo-image" />
+          <Container size={20} strokeWidth={1.5} style={{ color: 'var(--purple-400)', flexShrink: 0 }} />
           <span>DockPull</span>
         </div>
+
+        {/* Navigation */}
         <ul className="nav-links">
           <li>
             <NavLink to="/" end>
-              <Package size={18} />
+              <Package size={16} strokeWidth={1.75} />
               <span>Images</span>
             </NavLink>
           </li>
           <li>
             <NavLink to="/stats">
-              <BarChart3 size={18} />
-              <span>Stats</span>
+              <BarChart3 size={16} strokeWidth={1.75} />
+              <span>Overview</span>
             </NavLink>
           </li>
           <li>
             <NavLink to="/settings">
-              <Settings size={18} />
+              <Settings size={16} strokeWidth={1.75} />
               <span>Settings</span>
             </NavLink>
           </li>
         </ul>
+
+        {/* User / Footer */}
         <div className="sidebar-footer">
           <div className="user-info">
-            <div className="user-avatar-container" onClick={handleAvatarClick}>
+            <div className="user-avatar-container" onClick={handleAvatarClick} title="Change avatar">
               {user?.avatar ? (
                 <img src={user.avatar} alt="Avatar" className="user-avatar-image" />
               ) : (
@@ -84,7 +90,7 @@ function MainApp() {
                 </div>
               )}
               <div className="user-avatar-overlay">
-                <Camera size={14} />
+                <Camera size={12} />
               </div>
               <input
                 ref={fileInputRef}
@@ -99,19 +105,24 @@ function MainApp() {
               <div className="user-role">Administrator</div>
             </div>
             <button className="logout-btn" onClick={logout} title="Sign out">
-              <LogOut size={16} />
+              <LogOut size={15} />
             </button>
           </div>
         </div>
       </nav>
+
+      {/* ── Main Content ── */}
       <main className="content">
+        {/* Top bar */}
         <div className="content-header">
-          <div className="content-header-spacer"></div>
+          <div className="content-header-spacer" />
           <NotificationBell />
         </div>
+
+        {/* Page Routes */}
         <Routes>
-          <Route path="/" element={<Images />} />
-          <Route path="/stats" element={<Stats />} />
+          <Route path="/"         element={<Images />} />
+          <Route path="/stats"    element={<Stats />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>

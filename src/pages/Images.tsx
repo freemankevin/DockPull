@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { Plus, Trash2, Download, RefreshCw, Clock, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import {
+  Plus, Trash2, Download, RefreshCw, Clock,
+  AlertCircle, CheckCircle, Loader2, Package,
+  Layers, ChevronRight,
+} from 'lucide-react'
 import { useImages } from '../hooks/useImages'
 import { useNotification } from '../context/NotificationContext'
 import { imagesApi } from '../api'
@@ -10,16 +14,36 @@ const platformOptions = [
   { value: 'linux/arm64', label: 'linux/arm64' },
 ]
 
-function getStatusBadge(status: Image['status']) {
+function StatusBadge({ status }: { status: Image['status'] }) {
   switch (status) {
     case 'pending':
-      return <span className="badge badge-pending"><Clock size={12} /> Pending</span>
+      return (
+        <span className="badge badge-pending">
+          <Clock size={11} />
+          Pending
+        </span>
+      )
     case 'pulling':
-      return <span className="badge badge-pulling"><Loader2 size={12} className="spin" /> Pulling</span>
+      return (
+        <span className="badge badge-pulling">
+          <Loader2 size={11} className="spin" />
+          Pulling
+        </span>
+      )
     case 'success':
-      return <span className="badge badge-success"><CheckCircle size={12} /> Success</span>
+      return (
+        <span className="badge badge-success">
+          <CheckCircle size={11} />
+          Success
+        </span>
+      )
     case 'failed':
-      return <span className="badge badge-failed"><AlertCircle size={12} /> Failed</span>
+      return (
+        <span className="badge badge-failed">
+          <AlertCircle size={11} />
+          Failed
+        </span>
+      )
     default:
       return <span className="badge">{status}</span>
   }
@@ -42,7 +66,7 @@ export default function Images() {
       ...prev,
       platforms: prev.platforms.includes(platform)
         ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform]
+        : [...prev.platforms, platform],
     }))
   }
 
@@ -55,25 +79,24 @@ export default function Images() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     let platformsToPull = formData.platforms
-    
+
     const firstImage = batchMode ? batchText.split('\n')[0].trim() : formData.fullName
     if (firstImage && platformsToPull.includes('linux/arm64')) {
       const { name, tag } = parseImageName(firstImage)
       try {
         const checkRes = await imagesApi.checkPlatforms(name, tag)
         const supportedPlatforms = checkRes.data.platforms || []
-        
         if (!supportedPlatforms.includes('linux/arm64')) {
-          addNotification('error', `镜像不支持 linux/arm64 架构，将只拉取 linux/amd64`)
+          addNotification('error', 'Image does not support linux/arm64, pulling linux/amd64 only')
           platformsToPull = platformsToPull.filter(p => p !== 'linux/arm64')
         }
-      } catch (err) {
-        addNotification('info', '无法校验镜像架构，将继续拉取所选平台')
+      } catch {
+        addNotification('info', 'Unable to verify image architecture, continuing with selected platforms')
       }
     }
-    
+
     if (batchMode) {
       const lines = batchText.split('\n').filter(line => line.trim())
       for (const line of lines) {
@@ -82,115 +105,203 @@ export default function Images() {
           await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
         }
       }
-      addNotification('success', `Added ${lines.length * platformsToPull.length} images`)
+      addNotification('success', `Added ${lines.length * platformsToPull.length} image task(s)`)
     } else {
       const { name, tag } = parseImageName(formData.fullName)
       for (const platform of platformsToPull) {
         await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
       }
-      addNotification('success', `Added ${platformsToPull.length} image(s)`)
+      addNotification('success', `Added ${platformsToPull.length} image task(s)`)
     }
+
     setShowModal(false)
     setFormData({ fullName: '', platforms: ['linux/amd64', 'linux/arm64'], is_auto_export: false })
     setBatchText('')
   }
 
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setFormData({ fullName: '', platforms: ['linux/amd64', 'linux/arm64'], is_auto_export: false })
+    setBatchText('')
+    setBatchMode(false)
+  }
+
   return (
     <div>
+      {/* ── Page Header ── */}
       <div className="page-header">
-        <h1>Images</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h1>Images</h1>
+          {images.length > 0 && (
+            <span style={{
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-tertiary)',
+              borderRadius: '20px',
+              padding: '2px 8px',
+              fontSize: '12px',
+              fontWeight: 500,
+            }}>
+              {images.length}
+            </span>
+          )}
+        </div>
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            <Plus size={16} /> NEW
+            <Plus size={14} />
+            New Image
           </button>
         </div>
       </div>
 
+      {/* ── Images Table ── */}
       <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Platform</th>
-              <th>Status</th>
-              <th>Retries</th>
-              <th>Export Path</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {images.map((img) => (
-              <tr key={img.id}>
-                <td><code>{img.name}:{img.tag}</code></td>
-                <td>{img.platform}</td>
-                <td>{getStatusBadge(img.status)}</td>
-                <td>{img.retry_count}</td>
-                <td>
-                  {img.export_path ? (
-                    <span className="text-sm text-gray-600" title={img.export_path}>
-                      {img.export_path.split('/').pop()}
-                    </span>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                <td>{new Date(img.created_at).toLocaleString()}</td>
-                <td>
-                  <div className="flex gap-2">
-                    {img.status === 'failed' && (
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => pullImage(img.id)}
-                        title="Retry pull"
-                      >
-                        <RefreshCw size={14} />
-                      </button>
-                    )}
-                    {img.status === 'success' && !img.export_path && (
-                      <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => exportImage(img.id)}
-                        title="Export"
-                      >
-                        <Download size={14} />
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => deleteImage(img.id)}
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
+        {images.length > 0 ? (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Platform</th>
+                <th>Status</th>
+                <th>Retries</th>
+                <th>Export Path</th>
+                <th>Created</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {images.length === 0 && (
+            </thead>
+            <tbody>
+              {images.map((img) => (
+                <tr key={img.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        background: 'var(--accent-bg)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <Package size={14} style={{ color: 'var(--purple-400)' }} />
+                      </div>
+                      <div>
+                        <code style={{ fontSize: '12.5px', fontFamily: 'var(--font-mono)' }}>
+                          {img.name}
+                        </code>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '2px' }}>
+                          :{img.tag}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)',
+                      background: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border-color)',
+                      padding: '2px 7px',
+                      borderRadius: '4px',
+                    }}>
+                      {img.platform}
+                    </span>
+                  </td>
+                  <td><StatusBadge status={img.status} /></td>
+                  <td>
+                    <span style={{ color: img.retry_count > 0 ? 'var(--yellow-500)' : 'var(--text-muted)', fontSize: '13px' }}>
+                      {img.retry_count}
+                    </span>
+                  </td>
+                  <td>
+                    {img.export_path ? (
+                      <span
+                        className="truncate text-sm"
+                        title={img.export_path}
+                        style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+                      >
+                        <ChevronRight size={12} style={{ display: 'inline', marginRight: '2px', opacity: 0.5 }} />
+                        {img.export_path.split('/').pop()}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ color: 'var(--text-tertiary)', fontSize: '12.5px' }}>
+                    {new Date(img.created_at).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </td>
+                  <td>
+                    <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+                      {img.status === 'failed' && (
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => pullImage(img.id)}
+                          title="Retry pull"
+                        >
+                          <RefreshCw size={13} />
+                          Retry
+                        </button>
+                      )}
+                      {img.status === 'success' && !img.export_path && (
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => exportImage(img.id)}
+                          title="Export image"
+                        >
+                          <Download size={13} />
+                          Export
+                        </button>
+                      )}
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => deleteImage(img.id)}
+                        title="Delete"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
           <div className="empty-state clickable" onClick={() => setShowModal(true)}>
             <div className="empty-state-icon">
-              <Plus size={48} strokeWidth={1.5} />
+              <Layers size={44} strokeWidth={1.25} />
             </div>
-            <div className="empty-state-title">Add a New Image</div>
+            <div className="empty-state-title">No images yet</div>
             <div className="empty-state-description">
-              Pull and manage Docker images. Add your first image to get started with container deployment.
+              Pull and manage Docker images across multiple platforms. Click to add your first image.
+            </div>
+            <div className="empty-state-action">
+              <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); setShowModal(true) }}>
+                <Plus size={14} /> New Image
+              </button>
             </div>
           </div>
         )}
       </div>
 
+      {/* ── Add Image Modal ── */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Add Image</h2>
-              <button className="btn-close" onClick={() => setShowModal(false)}>×</button>
+              <button className="btn-close" onClick={handleCloseModal}>×</button>
             </div>
+
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                {/* Batch toggle */}
                 <div className="form-group">
                   <label className="checkbox-label">
                     <input
@@ -198,10 +309,11 @@ export default function Images() {
                       checked={batchMode}
                       onChange={(e) => setBatchMode(e.target.checked)}
                     />
-                    Batch mode (one per line)
+                    Batch mode — one image per line
                   </label>
                 </div>
 
+                {/* Image input */}
                 {batchMode ? (
                   <div className="form-group">
                     <label>Images</label>
@@ -210,7 +322,7 @@ export default function Images() {
                       rows={6}
                       value={batchText}
                       onChange={(e) => setBatchText(e.target.value)}
-                      placeholder="nginx:latest&#10;redis:7-alpine&#10;postgres:15"
+                      placeholder={'nginx:latest\nredis:7-alpine\npostgres:15'}
                       required
                     />
                   </div>
@@ -224,16 +336,18 @@ export default function Images() {
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       placeholder="nginx:latest"
                       required
+                      autoFocus
                     />
                   </div>
                 )}
 
+                {/* Platforms */}
                 <div className="form-group">
                   <label>Platforms</label>
                   <div className="platform-options">
                     {platformOptions.map(opt => (
-                      <label 
-                        key={opt.value} 
+                      <label
+                        key={opt.value}
                         className={`platform-option ${formData.platforms.includes(opt.value) ? 'selected' : ''}`}
                       >
                         <input
@@ -247,22 +361,29 @@ export default function Images() {
                   </div>
                 </div>
 
-                <div className="form-group">
+                {/* Auto-export */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
                       checked={formData.is_auto_export}
                       onChange={(e) => setFormData({ ...formData, is_auto_export: e.target.checked })}
                     />
-                    Auto-export after pull
+                    Auto-export after pull completes
                   </label>
                 </div>
               </div>
+
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={formData.platforms.length === 0}
+                >
+                  <Plus size={14} />
                   {batchMode ? 'Add Batch' : 'Add Image'}
                 </button>
               </div>
