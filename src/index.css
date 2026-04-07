@@ -49,21 +49,18 @@
   --blue-600:   #2563eb;
   --blue-100:   #dbeafe;
 
-  /* ── Railway Dark Backgrounds ── */
-  --bg-primary:   #13111c;   /* main panel */
-  --bg-secondary: #13111c;   /* page bg */
-  --bg-tertiary:  #13111c;  /* hover / elevated */
-  --bg-elevated:  #13111c;  /* cards */
+  --bg-primary:   #13111c;
+  --bg-secondary: #13111c;
+  --bg-tertiary:  #13111c;
+  --bg-elevated:  #13111c;
 
-  /* ── Text ── */
-  --text-primary:   hsl(270, 60%, 96%); /* #f0eaff */
-  --text-secondary: hsl(265, 20%, 65%); /* #a89fc0 */
-  --text-tertiary:  hsl(265, 16%, 45%); /* #6e6590 */
-  --text-muted:     hsl(265, 12%, 35%); /* #524e6a */
+  --text-primary:   hsl(270, 60%, 96%);
+  --text-secondary: hsl(265, 20%, 65%);
+  --text-tertiary:  hsl(265, 16%, 45%);
+  --text-muted:     hsl(265, 12%, 35%);
 
-  /* ── Borders ── */
-  --border-color:       hsl(250, 25%, 18%); /* #252038 */
-  --border-color-hover: hsl(250, 25%, 26%); /* #342f50 */
+  --border-color:       hsl(250, 25%, 18%);
+  --border-color-hover: hsl(250, 25%, 26%);
   --border-accent:      rgba(139, 92, 246, 0.3);
 
   /* ── Accent ── */
@@ -99,12 +96,54 @@
   --font-code: 'Source Code Pro', 'JetBrains Mono', monospace;
 }
 
+[data-theme="dark"] {
+  --bg-primary:   #13111c;
+  --bg-secondary: #13111c;
+  --bg-tertiary:  #1a1726;
+  --bg-elevated:  #1e1b2e;
+
+  --text-primary:   hsl(270, 60%, 96%);
+  --text-secondary: hsl(265, 20%, 65%);
+  --text-tertiary:  hsl(265, 16%, 45%);
+  --text-muted:     hsl(265, 12%, 35%);
+
+  --border-color:       hsl(250, 25%, 18%);
+  --border-color-hover: hsl(250, 25%, 26%);
+  --border-accent:      rgba(139, 92, 246, 0.3);
+
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-xl:  0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] {
+  --bg-primary:   #ffffff;
+  --bg-secondary: #ffffff;
+  --bg-tertiary:  #F7F7F7;
+  --bg-elevated:  #ffffff;
+
+  --text-primary:   hsl(270, 60%, 15%);
+  --text-secondary: hsl(265, 20%, 40%);
+  --text-tertiary:  hsl(265, 16%, 55%);
+  --text-muted:     hsl(265, 12%, 65%);
+
+  --border-color:       hsl(250, 25%, 88%);
+  --border-color-hover: hsl(250, 25%, 80%);
+  --border-accent:      rgba(139, 92, 246, 0.2);
+
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-xl:  0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
 /* ── Base Reset ── */
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.6;

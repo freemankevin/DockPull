@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Trash2, Download, RefreshCw, Clock,
   AlertCircle, CheckCircle, Loader2, Package,
-  Layers, ChevronRight, FileText, Edit,
+  Layers, ChevronRight, FileText, Edit, Copy,
 } from 'lucide-react'
 import { useImages } from '../hooks/useImages'
 import { useNotification } from '../context/NotificationContext'
@@ -14,6 +14,51 @@ const platformOptions = [
   { value: 'linux/amd64', label: 'Linux/AMD64' },
   { value: 'linux/arm64', label: 'Linux/ARM64' },
 ]
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="copy-btn"
+      title={copied ? 'Copied!' : 'Copy image name'}
+      style={{
+        padding: '4px',
+        border: 'none',
+        background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: copied ? 'var(--green-500)' : 'var(--text-tertiary)',
+        transition: 'all 0.15s ease',
+        marginLeft: '6px',
+      }}
+    >
+      {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
+    </button>
+  )
+}
 
 function StatusBadge({ status }: { status: Image['status'] }) {
   switch (status) {
@@ -239,13 +284,16 @@ export default function Images() {
                       }}>
                         <Package size={14} style={{ color: 'var(--purple-400)' }} />
                       </div>
-                      <div>
-                        <code style={{ fontSize: '12.5px', fontFamily: 'var(--font-mono)' }}>
-                          {img.name}
-                        </code>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '2px' }}>
-                          :{img.tag}
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '13px',
+                          color: 'var(--text-primary)',
+                          fontWeight: 500,
+                        }}>
+                          {img.name}:{img.tag}
                         </span>
+                        <CopyButton text={`${img.name}:${img.tag}`} />
                       </div>
                     </div>
                   </td>
