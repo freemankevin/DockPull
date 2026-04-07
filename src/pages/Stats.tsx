@@ -62,25 +62,23 @@ export default function Stats() {
       </div>
 
       {/* ── Stats Grid ── */}
-      <div className="content-box">
-        <div className="stats-grid">
-          {cards.map((card) => (
-            <div key={card.title} className={`stat-card stat-card-${card.color}`}>
-              <div className="stat-card-content">
-                <div className="stat-info">
-                  <p className="stat-title">{card.title}</p>
-                  <p className="stat-value">{card.value}</p>
-                  <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                    {card.description}
-                  </p>
-                </div>
-                <div className={`stat-icon-wrapper stat-icon-${card.color}`}>
-                  <card.icon size={20} strokeWidth={1.75} />
-                </div>
+      <div className="stats-grid" style={{ padding: '0 32px', marginBottom: '24px' }}>
+        {cards.map((card) => (
+          <div key={card.title} className={`stat-card stat-card-${card.color}`}>
+            <div className="stat-card-content">
+              <div className="stat-info">
+                <p className="stat-title">{card.title}</p>
+                <p className="stat-value">{card.value}</p>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                  {card.description}
+                </p>
+              </div>
+              <div className={`stat-icon-wrapper stat-icon-${card.color}`}>
+                <card.icon size={20} strokeWidth={1.75} />
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {/* ── Success Rate Panel ── */}

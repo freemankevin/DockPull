@@ -128,8 +128,8 @@
   --text-tertiary:  hsl(265, 16%, 55%);
   --text-muted:     hsl(265, 12%, 65%);
 
-  --border-color:       hsl(250, 25%, 88%);
-  --border-color-hover: hsl(250, 25%, 80%);
+  --border-color:       #f2f1f3;
+  --border-color-hover: #e5e4e6;
   --border-accent:      rgba(139, 92, 246, 0.2);
 
   --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.08);

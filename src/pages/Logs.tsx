@@ -164,11 +164,13 @@ export default function Logs() {
             <div className="empty-state-icon">
               <FileText size={44} strokeWidth={1.25} />
             </div>
-            <div className="empty-state-title">No logs found</div>
-            <div className="empty-state-description">
-              {searchQuery || selectedAction !== 'all' 
-                ? 'Try adjusting your search or filters'
-                : 'Logs will appear here as images are processed'}
+            <div className="empty-state-content">
+              <div className="empty-state-title">No logs found</div>
+              <div className="empty-state-description">
+                {searchQuery || selectedAction !== 'all' 
+                  ? 'Try adjusting your search or filters'
+                  : 'Logs will appear here as images are processed'}
+              </div>
             </div>
           </div>
         ) : (

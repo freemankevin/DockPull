@@ -247,14 +247,14 @@ export default function Images() {
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             <Plus size={14} />
-            New Image
+            New
           </button>
         </div>
       </div>
 
       {/* ── Images Table ── */}
-      <div className="table-container">
-        {images.length > 0 ? (
+      {images.length > 0 ? (
+        <div className="table-container">
           <table className="table">
             <thead>
               <tr>
@@ -389,23 +389,20 @@ export default function Images() {
               ))}
             </tbody>
           </table>
-        ) : (
-          <div className="empty-state clickable" onClick={() => setShowModal(true)}>
-            <div className="empty-state-icon">
-              <Layers size={44} strokeWidth={1.25} />
-            </div>
+        </div>
+      ) : (
+        <div className="empty-state clickable" onClick={() => setShowModal(true)}>
+          <div className="empty-state-icon">
+            <Layers size={44} strokeWidth={1.25} />
+          </div>
+          <div className="empty-state-content">
             <div className="empty-state-title">No images yet</div>
             <div className="empty-state-description">
               Pull and manage Docker images across multiple platforms. Click to add your first image.
             </div>
-            <div className="empty-state-action">
-              <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); setShowModal(true) }}>
-                <Plus size={14} /> New Image
-              </button>
-            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Add Image Modal ── */}
       {showModal && (

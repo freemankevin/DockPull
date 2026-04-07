@@ -26,25 +26,25 @@ function MainApp() {
 <ul className="nav-links">
           <li className="nav-top-divider">
             <NavLink to="/stats">
-              <BarChart3 size={16} strokeWidth={1.75} />
+              <BarChart3 size={18} strokeWidth={1.75} />
               <span>Overview</span>
             </NavLink>
           </li>
           <li>
             <NavLink to="/" end>
-              <Package size={16} strokeWidth={1.75} />
+              <Package size={18} strokeWidth={1.75} />
               <span>Images</span>
             </NavLink>
           </li>
           <li>
             <NavLink to="/logs">
-              <FileText size={16} strokeWidth={1.75} />
+              <FileText size={18} strokeWidth={1.75} />
               <span>Logs</span>
             </NavLink>
           </li>
           <li>
             <NavLink to="/settings">
-              <Settings size={16} strokeWidth={1.75} />
+              <Settings size={18} strokeWidth={1.75} />
               <span>Settings</span>
             </NavLink>
           </li>

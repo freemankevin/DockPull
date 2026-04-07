@@ -58,15 +58,15 @@
 .nav-links li a {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 7px 10px;
+  gap: 10px;
+  padding: 8px 10px;
   margin: 1px 0;
   color: var(--text-secondary);
   text-decoration: none;
   transition: background 0.12s ease, color 0.12s ease;
   border-radius: var(--radius-md);
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: 15px;
   letter-spacing: -0.01em;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .nav-links li a.active svg {
-  color: #be9ae3;
+  color: #853bce;
 }
 
 .nav-top-divider {
@@ -721,8 +721,11 @@
   border-radius: var(--radius-lg);
   background: var(--bg-tertiary);
   padding: 56px 40px;
-  text-align: center;
   margin: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
 }
 
 .empty-state.clickable {
@@ -744,25 +747,28 @@
 }
 
 .empty-state-icon {
-  margin-bottom: 16px;
   color: var(--text-muted);
   display: flex;
+  align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.empty-state-content {
+  text-align: left;
 }
 
 .empty-state-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   letter-spacing: -0.02em;
 }
 
 .empty-state-description {
   font-size: 13.5px;
   color: var(--text-secondary);
-  max-width: 360px;
-  margin: 0 auto;
   line-height: 1.65;
 }
 
