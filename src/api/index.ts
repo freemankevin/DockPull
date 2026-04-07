@@ -33,6 +33,7 @@ export const authApi = {
 export const imagesApi = {
   list: () => api.get('/images'),
   create: (data: any) => api.post('/images', data),
+  update: (id: number, data: any) => api.put(`/images/${id}`, data),
   delete: (id: number) => api.delete(`/images/${id}`),
   pull: (id: number) => api.post(`/images/${id}/pull`),
   export: (id: number) => api.post(`/images/${id}/export`),

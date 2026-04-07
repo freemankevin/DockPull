@@ -49,6 +49,17 @@ export function useImages() {
     }
   }
 
+  const updateImage = async (id: number, data: any) => {
+    try {
+      await imagesApi.update(id, data)
+      await fetchImages()
+      return true
+    } catch (err: any) {
+      setError(err.message)
+      return false
+    }
+  }
+
   const pullImage = async (id: number) => {
     try {
       await imagesApi.pull(id)
@@ -75,6 +86,7 @@ export function useImages() {
     loading,
     error,
     createImage,
+    updateImage,
     deleteImage,
     pullImage,
     exportImage,

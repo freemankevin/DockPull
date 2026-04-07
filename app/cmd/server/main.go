@@ -45,6 +45,19 @@ func main() {
 	r := gin.New()
 	r.Use(middleware.Logger())
 
+	// Debug endpoint to check user
+	r.GET("/debug/user/:username", func(c *gin.Context) {
+		username := c.Param("username")
+		var id int64
+		var dbUsername, password string
+		err := db.QueryRow("SELECT id, username, password FROM users WHERE username = ?", username).Scan(&id, &dbUsername, &password)
+		if err != nil {
+			c.JSON(404, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"id": id, "username": dbUsername, "password_hash": password})
+	})
+
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -65,6 +78,7 @@ func main() {
 		h := handler.NewHandler(imageService, dockerService, webhookService, cfg)
 		api.GET("/images", h.ListImages)
 		api.POST("/images", h.CreateImage)
+		api.PUT("/images/:id", h.UpdateImage)
 		api.DELETE("/images/:id", h.DeleteImage)
 		api.GET("/images/:id/logs", h.GetImageLogs)
 		api.POST("/images/:id/pull", h.PullImage)

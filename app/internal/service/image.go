@@ -126,6 +126,53 @@ func (s *ImageService) DeleteImage(imageID int64) error {
 	return database.DeleteImage(s.db, imageID)
 }
 
+func (s *ImageService) UpdateImage(imageID int64, req *models.UpdateImageRequest) (*models.Image, error) {
+	img, err := database.GetImageByID(s.db, imageID)
+	if err != nil {
+		return nil, err
+	}
+
+	if img.Status == "pulling" {
+		return nil, fmt.Errorf("cannot edit image while pulling")
+	}
+
+	originalPlatform := img.Platform
+
+	if req.Name != "" {
+		img.Name = req.Name
+	}
+	if req.Tag != "" {
+		img.Tag = req.Tag
+	}
+	img.FullName = img.Name + ":" + img.Tag
+	if req.Platform != "" {
+		img.Platform = req.Platform
+	}
+	img.IsAutoExport = req.IsAutoExport
+
+	platformChanged := (img.Platform != originalPlatform)
+
+	if platformChanged || img.Status == "success" {
+		img.Status = "pending"
+		img.ExportPath = nil
+		img.ErrorMessage = nil
+		img.RetryCount = 0
+		err = database.UpdateImageAndReset(s.db, imageID, img.Name, img.Tag, img.FullName, img.Platform, img.IsAutoExport)
+	} else {
+		err = database.UpdateImage(s.db, imageID, img.Name, img.Tag, img.FullName, img.Platform, img.IsAutoExport)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	s.logAction(imageID, "UPDATE", fmt.Sprintf("Updated image to %s:%s (%s)", img.Name, img.Tag, img.Platform))
+	if platformChanged && originalPlatform != "" {
+		s.logAction(imageID, "PLATFORM_CHANGED", fmt.Sprintf("Platform changed from %s to %s, will re-pull", originalPlatform, img.Platform))
+	}
+	return img, nil
+}
+
 func (s *ImageService) logAction(imageID int64, action, message string) {
 	log := &models.ImageLog{
 		ImageID: imageID,

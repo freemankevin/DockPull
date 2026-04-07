@@ -10,8 +10,8 @@ type Image struct {
 	Platform     string     `json:"platform" db:"platform"`
 	Status       string     `json:"status" db:"status"` // pending, pulling, success, failed
 	RetryCount   int        `json:"retry_count" db:"retry_count"`
-	ErrorMessage string     `json:"error_message" db:"error_message"`
-	ExportPath   string     `json:"export_path" db:"export_path"`
+	ErrorMessage *string    `json:"error_message" db:"error_message"`
+	ExportPath   *string    `json:"export_path" db:"export_path"`
 	ExportedAt   *time.Time `json:"exported_at" db:"exported_at"`
 	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
@@ -36,6 +36,13 @@ type User struct {
 type CreateImageRequest struct {
 	Name         string `json:"name" binding:"required"`
 	Tag          string `json:"tag" default:"latest"`
+	Platform     string `json:"platform"`
+	IsAutoExport bool   `json:"is_auto_export"`
+}
+
+type UpdateImageRequest struct {
+	Name         string `json:"name"`
+	Tag          string `json:"tag"`
 	Platform     string `json:"platform"`
 	IsAutoExport bool   `json:"is_auto_export"`
 }

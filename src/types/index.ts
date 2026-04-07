@@ -6,8 +6,8 @@ export interface Image {
   platform: string
   status: 'pending' | 'pulling' | 'success' | 'failed'
   retry_count: number
-  error_message: string
-  export_path: string
+  error_message: string | null
+  export_path: string | null
   exported_at: string | null
   created_at: string
   updated_at: string

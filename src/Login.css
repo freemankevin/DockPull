@@ -271,12 +271,56 @@
 }
 
 .login-remember input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
-  accent-color: #8b5cf6;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 1.5px solid rgba(167, 139, 250, 0.3);
   border-radius: 4px;
   cursor: pointer;
   padding: 0;
+  transition: all 0.15s ease;
+}
+
+.login-remember input[type="checkbox"]:hover {
+  border-color: rgba(167, 139, 250, 0.6);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.login-remember input[type="checkbox"]:checked {
+  background: rgba(139, 92, 246, 0.8);
+  border-color: rgba(139, 92, 246, 0.8);
+}
+
+.login-remember input[type="checkbox"]:checked:hover {
+  background: rgba(167, 139, 250, 0.9);
+  border-color: rgba(167, 139, 250, 0.9);
+}
+
+.login-remember input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.login-remember input[type="checkbox"]:checked::before {
+  opacity: 1;
+}
+
+.login-remember input[type="checkbox"]:focus-visible {
+  outline: none;
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
 .login-forgot {

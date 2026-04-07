@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"docker-pull-manager/internal/middleware"
 	"docker-pull-manager/internal/models"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -27,11 +29,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	user, err := h.getUserByUsername(req.Username)
 	if err != nil {
+		fmt.Printf("\033[33m%s [WARN] User not found: %s, error: %v\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), req.Username, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 		return
 	}
 
+	fmt.Printf("\033[36m%s [DEBUG] Found user: %+v\033[0m\n",
+		time.Now().Format("2006-01-02 15:04:05"), user)
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		fmt.Printf("\033[33m%s [WARN] Password mismatch for user: %s, error: %v\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), req.Username, err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 		return
 	}
@@ -69,22 +78,22 @@ func (h *AuthHandler) Me(c *gin.Context) {
 }
 
 func (h *AuthHandler) InitDefaultUser() error {
-	var count int
-	err := h.db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	if count == 0 {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		_, err = h.db.Exec(`INSERT INTO users (username, password) VALUES (?, ?)`, "admin", hashedPassword)
-		if err != nil {
-			return err
-		}
+	result, err := h.db.Exec(`
+		INSERT INTO users (username, password) VALUES ('admin', ?)
+		ON CONFLICT(username) DO UPDATE SET password = excluded.password
+	`, hashedPassword)
+	if err != nil {
+		return err
 	}
+
+	rowsAffected, _ := result.RowsAffected()
+	fmt.Printf("\033[32m%s [INFO] Default user initialized/updated, rows affected: %d\033[0m\n",
+		time.Now().Format("2006-01-02 15:04:05"), rowsAffected)
 
 	return nil
 }

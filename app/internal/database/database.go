@@ -150,6 +150,18 @@ func DeleteImage(db *sql.DB, id int64) error {
 	return err
 }
 
+func UpdateImage(db *sql.DB, id int64, name, tag, fullName, platform string, isAutoExport bool) error {
+	query := `UPDATE images SET name = ?, tag = ?, full_name = ?, platform = ?, is_auto_export = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	_, err := db.Exec(query, name, tag, fullName, platform, isAutoExport, id)
+	return err
+}
+
+func UpdateImageAndReset(db *sql.DB, id int64, name, tag, fullName, platform string, isAutoExport bool) error {
+	query := `UPDATE images SET name = ?, tag = ?, full_name = ?, platform = ?, is_auto_export = ?, status = 'pending', retry_count = 0, error_message = NULL, export_path = NULL, exported_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	_, err := db.Exec(query, name, tag, fullName, platform, isAutoExport, id)
+	return err
+}
+
 func CreateLog(db *sql.DB, log *models.ImageLog) error {
 	query := `INSERT INTO image_logs (image_id, action, message) VALUES (?, ?, ?)`
 	result, err := db.Exec(query, log.ImageID, log.Action, log.Message)

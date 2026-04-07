@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Code+Pro:wght@400;500;600&display=swap');
 
 * {
   margin: 0;
@@ -50,10 +50,10 @@
   --blue-100:   #dbeafe;
 
   /* ── Railway Dark Backgrounds ── */
-  --bg-primary:   hsl(250, 24%, 9%);   /* #131020 – main panel */
-  --bg-secondary: hsl(250, 21%, 7%);   /* #0d0b17 – page bg */
-  --bg-tertiary:  hsl(250, 20%, 12%);  /* #181528 – hover / elevated */
-  --bg-elevated:  hsl(250, 18%, 15%);  /* #1e1b30 – cards */
+  --bg-primary:   #13111c;   /* main panel */
+  --bg-secondary: #13111c;   /* page bg */
+  --bg-tertiary:  #13111c;  /* hover / elevated */
+  --bg-elevated:  #13111c;  /* cards */
 
   /* ── Text ── */
   --text-primary:   hsl(270, 60%, 96%); /* #f0eaff */
@@ -95,7 +95,8 @@
 
   /* ── Typography ── */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'DM Mono', 'SFMono-Regular', 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  --font-mono: 'JetBrains Mono', 'Source Code Pro', 'SFMono-Regular', 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  --font-code: 'Source Code Pro', 'JetBrains Mono', monospace;
 }
 
 /* ── Base Reset ── */

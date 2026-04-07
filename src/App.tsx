@@ -1,9 +1,10 @@
 import { useRef } from 'react'
-import { Package, Settings, BarChart3, LogOut, Camera, Container } from 'lucide-react'
+import { Package, Settings, BarChart3, LogOut, Camera, FileText } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
 import Images from './pages/Images'
 import SettingsPage from './pages/Settings'
 import Stats from './pages/Stats'
+import Logs from './pages/Logs'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
@@ -52,16 +53,22 @@ function MainApp() {
       <nav className="sidebar">
         {/* Brand */}
         <div className="logo">
-          <Container size={20} strokeWidth={1.5} style={{ color: 'var(--purple-400)', flexShrink: 0 }} />
+          <img src="/logo.png" alt="DockPull" className="logo-image" />
           <span>DockPull</span>
         </div>
 
         {/* Navigation */}
-        <ul className="nav-links">
+<ul className="nav-links">
           <li>
             <NavLink to="/" end>
               <Package size={16} strokeWidth={1.75} />
               <span>Images</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/logs">
+              <FileText size={16} strokeWidth={1.75} />
+              <span>Logs</span>
             </NavLink>
           </li>
           <li>
@@ -120,8 +127,9 @@ function MainApp() {
         </div>
 
         {/* Page Routes */}
-        <Routes>
+<Routes>
           <Route path="/"         element={<Images />} />
+          <Route path="/logs"    element={<Logs />} />
           <Route path="/stats"    element={<Stats />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>

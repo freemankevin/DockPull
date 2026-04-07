@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Plus, Trash2, Download, RefreshCw, Clock,
   AlertCircle, CheckCircle, Loader2, Package,
-  Layers, ChevronRight,
+  Layers, ChevronRight, FileText, Edit,
 } from 'lucide-react'
 import { useImages } from '../hooks/useImages'
 import { useNotification } from '../context/NotificationContext'
@@ -10,8 +11,8 @@ import { imagesApi } from '../api'
 import type { Image } from '../types'
 
 const platformOptions = [
-  { value: 'linux/amd64', label: 'linux/amd64' },
-  { value: 'linux/arm64', label: 'linux/arm64' },
+  { value: 'linux/amd64', label: 'Linux/AMD64' },
+  { value: 'linux/arm64', label: 'Linux/ARM64' },
 ]
 
 function StatusBadge({ status }: { status: Image['status'] }) {
@@ -50,9 +51,12 @@ function StatusBadge({ status }: { status: Image['status'] }) {
 }
 
 export default function Images() {
-  const { images, createImage, deleteImage, pullImage, exportImage } = useImages()
+  const navigate = useNavigate()
+  const { images, createImage, updateImage, deleteImage, pullImage, exportImage } = useImages()
   const { addNotification } = useNotification()
   const [showModal, setShowModal] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editingImage, setEditingImage] = useState<Image | null>(null)
   const [batchMode, setBatchMode] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -124,6 +128,55 @@ export default function Images() {
     setFormData({ fullName: '', platforms: ['linux/amd64', 'linux/arm64'], is_auto_export: false })
     setBatchText('')
     setBatchMode(false)
+    setEditMode(false)
+    setEditingImage(null)
+  }
+
+  const handleEditImage = (img: Image) => {
+    setEditMode(true)
+    setEditingImage(img)
+    setFormData({
+      fullName: img.full_name,
+      platforms: [img.platform],
+      is_auto_export: img.is_auto_export,
+    })
+    setBatchMode(false)
+    setShowModal(true)
+  }
+
+  const handleUpdateImage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingImage) return
+
+    const { name, tag } = parseImageName(formData.fullName)
+    
+    // Update the original image with first platform
+    const success = await updateImage(editingImage.id, {
+      name,
+      tag,
+      platform: formData.platforms[0],
+      is_auto_export: formData.is_auto_export,
+    })
+
+    if (!success) {
+      addNotification('error', 'Failed to update image')
+      return
+    }
+
+    // If multiple platforms selected, create new images for additional platforms
+    if (formData.platforms.length > 1) {
+      const additionalPlatforms = formData.platforms.slice(1)
+      let createdCount = 0
+      for (const platform of additionalPlatforms) {
+        const created = await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
+        if (created) createdCount++
+      }
+      addNotification('success', `Image updated + ${createdCount} new platform(s) added`)
+    } else {
+      addNotification('success', 'Image updated successfully')
+    }
+    
+    handleCloseModal()
   }
 
   return (
@@ -239,6 +292,22 @@ export default function Images() {
                   </td>
                   <td>
                     <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => navigate(`/logs?imageId=${img.id}`)}
+                        title="View logs"
+                      >
+                        <FileText size={13} />
+                      </button>
+                      {img.status !== 'pulling' && (
+                        <button
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => handleEditImage(img)}
+                          title="Edit"
+                        >
+                          <Edit size={13} />
+                        </button>
+                      )}
                       {img.status === 'failed' && (
                         <button
                           className="btn btn-sm btn-secondary"
@@ -295,23 +364,25 @@ export default function Images() {
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Add Image</h2>
+              <h2>{editMode ? 'Edit Image' : 'Add Image'}</h2>
               <button className="btn-close" onClick={handleCloseModal}>×</button>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={editMode ? handleUpdateImage : handleSubmit}>
               <div className="modal-body">
-                {/* Batch toggle */}
-                <div className="form-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={batchMode}
-                      onChange={(e) => setBatchMode(e.target.checked)}
-                    />
-                    Batch mode — one image per line
-                  </label>
-                </div>
+                {/* Batch toggle - only show in create mode */}
+                {!editMode && (
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={batchMode}
+                        onChange={(e) => setBatchMode(e.target.checked)}
+                      />
+                      <span>Batch mode — one image per line</span>
+                    </label>
+                  </div>
+                )}
 
                 {/* Image input */}
                 {batchMode ? (
@@ -369,9 +440,23 @@ export default function Images() {
                       checked={formData.is_auto_export}
                       onChange={(e) => setFormData({ ...formData, is_auto_export: e.target.checked })}
                     />
-                    Auto-export after pull completes
+                    <span>Auto-export after pull completes</span>
                   </label>
                 </div>
+
+                {editMode && editingImage?.status === 'success' && (
+                  <div style={{
+                    padding: '12px',
+                    background: 'rgba(234, 179, 8, 0.1)',
+                    border: '1px solid rgba(234, 179, 8, 0.2)',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: 'var(--yellow-500)',
+                    marginBottom: '12px',
+                  }}>
+                    Editing will reset the image to pending state for re-pulling.
+                  </div>
+                )}
               </div>
 
               <div className="modal-footer">
@@ -383,8 +468,8 @@ export default function Images() {
                   className="btn btn-primary"
                   disabled={formData.platforms.length === 0}
                 >
-                  <Plus size={14} />
-                  {batchMode ? 'Add Batch' : 'Add Image'}
+                  {editMode ? <Edit size={14} /> : <Plus size={14} />}
+                  {editMode ? 'Save Changes' : batchMode ? 'Add Batch' : 'Add Image'}
                 </button>
               </div>
             </form>

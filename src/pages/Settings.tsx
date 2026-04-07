@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Save, FlaskConical, Folder, CheckCircle, AlertCircle } from 'lucide-react'
 import { useConfig } from '../hooks/useConfig'
 import { webhookApi } from '../api'
+import Select from '../components/Select'
 
 type ToastType = 'success' | 'error' | null
 
@@ -138,16 +139,16 @@ export default function Settings() {
 
             <div className="form-group">
               <label>Default Platform</label>
-              <select
-                className="form-control"
+              <Select
                 value={getValue('default_platform') || 'linux/amd64'}
-                onChange={(e) => setFormData({ ...formData, default_platform: e.target.value })}
-              >
-                <option value="linux/amd64">linux/amd64</option>
-                <option value="linux/arm64">linux/arm64</option>
-                <option value="linux/arm/v7">linux/arm/v7</option>
-                <option value="linux/386">linux/386</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, default_platform: value })}
+                options={[
+                  { value: 'linux/amd64', label: 'Linux/AMD64' },
+                  { value: 'linux/arm64', label: 'Linux/ARM64' },
+                  { value: 'linux/arm/v7', label: 'Linux/ARM v7' },
+                  { value: 'linux/386', label: 'Linux/386' },
+                ]}
+              />
             </div>
 
             <div className="form-row">
@@ -215,22 +216,21 @@ export default function Settings() {
                   checked={getValue('enable_webhook') || false}
                   onChange={(e) => setFormData({ ...formData, enable_webhook: e.target.checked })}
                 />
-                Enable webhook notifications
+<span>Enable webhook notifications</span>
               </label>
             </div>
 
             <div className="form-group">
               <label>Webhook Type</label>
-              <select
-                className="form-control"
+              <Select
                 value={getValue('webhook_type') || 'dingtalk'}
-                onChange={(e) => setFormData({ ...formData, webhook_type: e.target.value })}
-                disabled={!getValue('enable_webhook')}
-              >
-                <option value="dingtalk">DingTalk</option>
-                <option value="feishu">Lark (Feishu)</option>
-                <option value="wechat">WeChat Work</option>
-              </select>
+                onChange={(value) => setFormData({ ...formData, webhook_type: value })}
+                options={[
+                  { value: 'dingtalk', label: 'DingTalk' },
+                  { value: 'feishu', label: 'Lark (Feishu)' },
+                  { value: 'wechat', label: 'WeChat Work' },
+                ]}
+              />
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
