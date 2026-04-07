@@ -14,16 +14,14 @@ import './App.css'
 
 function MainApp() {
   return (
-    <div className="app">
+    <div className="app-layout">
       {/* ── Sidebar ── */}
-      <nav className="sidebar">
-        {/* Brand */}
+      <aside className="sidebar">
         <div className="logo">
           <img src="/logo.png" alt="DockPull" className="logo-image" />
         </div>
 
-        {/* Navigation */}
-<ul className="nav-links">
+        <ul className="nav-links">
           <li className="nav-top-divider">
             <NavLink to="/stats">
               <BarChart3 size={18} strokeWidth={1.75} />
@@ -50,27 +48,40 @@ function MainApp() {
           </li>
         </ul>
 
-        {/* User / Footer */}
         <div className="sidebar-footer">
           <UserMenu />
         </div>
-      </nav>
+      </aside>
 
-      {/* ── Main Content ── */}
-      <main className="content">
-        {/* Top bar */}
-        <div className="content-header">
-          <div className="content-header-spacer" />
+      {/* ── Main Wrapper (右侧容器，带 margin) ── */}
+      <main className="main-wrapper">
+        {/* 独立的顶部通知区域 */}
+        <div className="top-bar">
           <NotificationBell />
+          <div className="top-bar-divider"></div>
+          <div className="top-bar-date">
+            {new Date().toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </div>
         </div>
 
-        {/* Page Routes */}
-<Routes>
-          <Route path="/"         element={<Images />} />
-          <Route path="/logs"    element={<Logs />} />
-          <Route path="/stats"    element={<Stats />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
+        {/* ── Content Card (白色卡片容器) ── */}
+        <div className="content-card">
+          {/* Card Body */}
+          <div className="card-body">
+            <Routes>
+              <Route path="/"         element={<Images />} />
+              <Route path="/logs"    element={<Logs />} />
+              <Route path="/stats"    element={<Stats />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </div>
+        </div>
       </main>
     </div>
   )

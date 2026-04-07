@@ -62,7 +62,7 @@ export default function Stats() {
       </div>
 
       {/* ── Stats Grid ── */}
-      <div className="stats-grid" style={{ padding: '0 32px', marginBottom: '24px' }}>
+      <div className="stats-grid" style={{ marginBottom: '24px' }}>
         {cards.map((card) => (
           <div key={card.title} className={`stat-card stat-card-${card.color}`}>
             <div className="stat-card-content">
