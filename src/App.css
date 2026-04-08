@@ -39,7 +39,7 @@ body, * {
 .logo-image {
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: var(--radius-card);
   object-fit: contain;
 }
 
@@ -67,7 +67,7 @@ body, * {
   color: #6b7280;
   text-decoration: none;
   transition: background 0.12s ease, color 0.12s ease;
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   font-weight: 400;
   font-size: 14px;
   line-height: 1.4;
@@ -228,7 +228,7 @@ body, * {
   width: 200px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-xl);
   z-index: 100;
   overflow: hidden;
@@ -413,7 +413,7 @@ body, * {
     Content Card (Railway 风格)
  ═══════════════════════════════════════════════════════════ */
 .content-card {
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   border: 1px solid #e0e0e0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   background: #ffffff;
@@ -486,7 +486,7 @@ body, * {
   font-weight: 700;
   min-width: 15px;
   height: 15px;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -501,7 +501,7 @@ body, * {
   width: 300px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-xl);
   z-index: 200;
   overflow: hidden;
@@ -591,7 +591,7 @@ body, * {
   gap: 6px;
   padding: 7px 13px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -628,7 +628,7 @@ body, * {
   box-shadow: 0 1px 3px rgba(133, 59, 206, 0.35);
   width: 80px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   padding: 0;
 }
 
@@ -697,7 +697,7 @@ body, * {
  ═══════════════════════════════════════════════════════════ */
 .card {
   background: var(--bg-primary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   padding: 20px;
   border: 1px solid var(--border-color);
 }
@@ -723,7 +723,7 @@ body, * {
  ═══════════════════════════════════════════════════════════ */
 .table-container {
   overflow-x: auto;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   border: 1px solid var(--border-color);
   background: var(--bg-primary);
   margin: 0 0 24px;
@@ -747,8 +747,8 @@ body, * {
   letter-spacing: 0;
 }
 
-.table th:first-child { border-radius: var(--radius-lg) 0 0 0; }
-.table th:last-child  { border-radius: 0 var(--radius-lg) 0 0; }
+.table th:first-child { border-radius: var(--radius-card) 0 0 0; }
+.table th:last-child  { border-radius: 0 var(--radius-card) 0 0; }
 
 .table td {
   padding: 12px 16px;
@@ -783,7 +783,7 @@ body, * {
 
 .empty-state {
   border: 1.5px dashed #e0e0e0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: white;
   padding: 56px 40px;
   margin: 0;
@@ -830,19 +830,19 @@ body, * {
 }
 
 .icon-cell:nth-child(1) {
-  border-radius: 10px 0 0 0;
+  border-radius: 6px 0 0 0;
 }
 
 .icon-cell:nth-child(2) {
-  border-radius: 0 10px 0 0;
+  border-radius: 0 6px 0 0;
 }
 
 .icon-cell:nth-child(3) {
-  border-radius: 0 0 0 10px;
+  border-radius: 0 0 0 6px;
 }
 
 .icon-cell:nth-child(4) {
-  border-radius: 0 0 10px 0;
+  border-radius: 0 0 6px 0;
 }
 
 .empty-state-content {
@@ -874,7 +874,7 @@ body, * {
   color: var(--text-muted);
   background: var(--bg-tertiary);
   border: 0.5px solid var(--border-color);
-  border-radius: 5px;
+  border-radius: var(--radius-card);
   padding: 2px 7px;
   font-family: var(--font-mono);
 }
@@ -955,7 +955,7 @@ body, * {
   width: 100%;
   padding: 11px 14px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   font-size: 14px;
   font-family: var(--font-sans);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1122,7 +1122,7 @@ select.form-control {
 .modal {
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-card);
   width: 100%;
   max-width: 480px;
   max-height: calc(100vh - 40px);
@@ -1162,7 +1162,7 @@ select.form-control {
   justify-content: flex-end;
   gap: 8px;
   background: var(--bg-primary);
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
 }
 
 .btn-close {
@@ -1234,7 +1234,7 @@ select.form-control {
 
 .stat-card {
   background: var(--bg-tertiary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   padding: 18px 20px;
   border: 1px solid var(--border-color);
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -1249,7 +1249,7 @@ select.form-control {
   left: 0;
   right: 0;
   height: 2px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -1299,7 +1299,7 @@ select.form-control {
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   flex-shrink: 0;
 }
 
@@ -1338,7 +1338,7 @@ select.form-control {
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   cursor: pointer;
   transition: border-color 0.12s ease, background 0.12s ease;
   background: var(--bg-tertiary);
@@ -1423,7 +1423,7 @@ select.form-control {
 ═══════════════════════════════════════════════════════════ */
 .content-box {
   background: var(--bg-primary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   padding: 28px;
   margin: 0 0 24px;
 }
