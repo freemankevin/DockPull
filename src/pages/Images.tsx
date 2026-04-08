@@ -424,11 +424,7 @@ export default function Images() {
                 </svg>
               </div>
               <div className="icon-cell">
-                <svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 1.5c4.687 0 8.5 3.813 8.5 8.5s-3.813 8.5-8.5 8.5S3.5 16.687 3.5 12 7.313 3.5 12 3.5z" fill="#EE0000"/>
-                  <path d="M12 6a6 6 0 100 12A6 6 0 0012 6zm0 1.5a4.5 4.5 0 110 9 4.5 4.5 0 010-9z" fill="#EE0000" opacity="0.5"/>
-                  <circle cx="12" cy="12" r="2.5" fill="#EE0000"/>
-                </svg>
+                <i className="fab fa-redhat" style={{ color: '#EE0000', fontSize: '24px' }}></i>
               </div>
               <div className="icon-cell">
                 <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

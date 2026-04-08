@@ -73,8 +73,8 @@ export default function Settings() {
   const getValue = (key: string) => formData[key] ?? config[key as keyof typeof config]
 
   return (
-    <div className="content-center">
-      {/* ── Page Header ── */}
+<div className="content-center">
+{/* ── Page Header ── */}
       <div className="page-header">
         <h1>Settings</h1>
       </div>
@@ -244,7 +244,7 @@ export default function Settings() {
                   checked={getValue('enable_webhook') || false}
                   onChange={(e) => setFormData({ ...formData, enable_webhook: e.target.checked })}
                 />
-<span>Enable webhook notifications</span>
+                <span>Enable webhook notifications</span>
               </label>
             </div>
 
@@ -261,7 +261,7 @@ export default function Settings() {
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
+<div className="form-group" style={{ marginBottom: 0 }}>
               <label>Webhook URL</label>
               <input
                 type="text"
