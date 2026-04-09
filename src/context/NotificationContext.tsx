@@ -2,7 +2,7 @@ import { createContext, useContext, useState, ReactNode } from 'react'
 
 export interface Notification {
   id: number
-  type: 'success' | 'error' | 'info'
+  type: 'success' | 'error' | 'info' | 'warning'
   message: string
   time: Date
 }

@@ -25,30 +25,7 @@ function detectRegistry(imageName: string): string {
 
 function getShortName(imageName: string): string {
   const parts = imageName.split('/')
-  
-  if (parts.length === 1) {
-    return parts[0]
-  }
-  
-  const firstPart = parts[0]
-  const hasRegistry = firstPart.includes('.') || firstPart === 'localhost'
-  
-  if (hasRegistry) {
-    const remaining = parts.slice(1)
-    if (remaining.length === 1) {
-      return remaining[0]
-    }
-    if (remaining[0] === 'library') {
-      return remaining.slice(1).join('/')
-    }
-    return remaining.join('/')
-  }
-  
-  if (parts[0] === 'library') {
-    return parts.slice(1).join('/')
-  }
-  
-  return parts.join('/')
+  return parts[parts.length - 1]
 }
 
 function RegistryIcon({ registry }: { registry: string }) {
@@ -218,11 +195,12 @@ function StatusBadge({ status }: { status: Image['status'] }) {
 }
 
 export default function Images() {
-  const { images, createImage, deleteImage, pullImage, exportImage } = useImages()
-  const { config } = useConfig()
   const { addNotification } = useNotification()
+  const { images, createImage, deleteImage, pullImage, exportImage } = useImages(addNotification)
+  const { config } = useConfig()
   const [showModal, setShowModal] = useState(false)
   const [batchMode, setBatchMode] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
     platforms: ['linux/amd64', 'linux/arm64'],
@@ -257,48 +235,76 @@ export default function Images() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isSubmitting) return
+    setIsSubmitting(true)
 
-    let platformsToPull = formData.platforms
+    try {
+      let platformsToPull = formData.platforms
 
-    const firstImage = batchMode ? batchText.split('\n')[0].trim() : formData.fullName
-    if (firstImage && platformsToPull.includes('linux/arm64')) {
-      const { name, tag } = parseImageName(firstImage)
-      try {
-        const checkRes = await imagesApi.checkPlatforms(name, tag)
-        const supportedPlatforms = checkRes.data.platforms || []
-        if (!supportedPlatforms.includes('linux/arm64')) {
-          addNotification('error', 'Image does not support linux/arm64, pulling linux/amd64 only')
-          platformsToPull = platformsToPull.filter(p => p !== 'linux/arm64')
+      const firstImage = batchMode ? batchText.split('\n')[0].trim() : formData.fullName
+      if (firstImage && platformsToPull.includes('linux/arm64')) {
+        const { name, tag } = parseImageName(firstImage)
+        try {
+          const checkRes = await imagesApi.checkPlatforms(name, tag)
+          const supportedPlatforms = checkRes.data.platforms || []
+          if (!supportedPlatforms.includes('linux/arm64')) {
+            addNotification('error', 'Image does not support linux/arm64, pulling linux/amd64 only')
+            platformsToPull = platformsToPull.filter(p => p !== 'linux/arm64')
+          }
+        } catch {
+          addNotification('info', 'Unable to verify image architecture, continuing with selected platforms')
         }
-      } catch {
-        addNotification('info', 'Unable to verify image architecture, continuing with selected platforms')
       }
-    }
 
-    if (batchMode) {
-      const lines = batchText.split('\n').filter(line => line.trim())
-      for (const line of lines) {
-        const { name, tag } = parseImageName(line)
+      let addedCount = 0
+      let duplicateCount = 0
+
+      if (batchMode) {
+        const lines = batchText.split('\n').filter(line => line.trim())
+        for (const line of lines) {
+          const { name, tag } = parseImageName(line)
+          for (const platform of platformsToPull) {
+            const result = await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
+            if (result.success) {
+              addedCount++
+            } else if (result.duplicate) {
+              duplicateCount++
+            }
+          }
+        }
+        if (duplicateCount > 0) {
+          addNotification('warning', `${duplicateCount} task(s) skipped (already exists), ${addedCount} task(s) added`)
+        } else {
+          addNotification('success', `Added ${addedCount} image task(s)`)
+        }
+      } else {
+        const { name, tag } = parseImageName(formData.fullName)
         for (const platform of platformsToPull) {
-          await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
+          const result = await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
+          if (result.success) {
+            addedCount++
+          } else if (result.duplicate) {
+            duplicateCount++
+          }
+        }
+        if (duplicateCount > 0) {
+          addNotification('warning', `${duplicateCount} task(s) skipped (already exists), ${addedCount} task(s) added`)
+        } else {
+          addNotification('success', `Added ${addedCount} image task(s)`)
         }
       }
-      addNotification('success', `Added ${lines.length * platformsToPull.length} image task(s)`)
-    } else {
-      const { name, tag } = parseImageName(formData.fullName)
-      for (const platform of platformsToPull) {
-        await createImage({ name, tag, platform, is_auto_export: formData.is_auto_export })
-      }
-      addNotification('success', `Added ${platformsToPull.length} image task(s)`)
-    }
 
-    setShowModal(false)
-    setFormData({ 
-      fullName: '', 
-      platforms: config?.default_platform?.split(',').filter(p => p.trim()) || ['linux/amd64', 'linux/arm64'], 
-      is_auto_export: false 
-    })
-    setBatchText('')
+      setShowModal(false)
+      setFormData({ 
+        fullName: '', 
+        platforms: config?.default_platform?.split(',').filter(p => p.trim()) || ['linux/amd64', 'linux/arm64'], 
+        is_auto_export: false 
+      })
+      setBatchText('')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleCloseModal = () => {
@@ -574,16 +580,30 @@ export default function Images() {
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={handleCloseModal}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={formData.platforms.length === 0}
+                  disabled={formData.platforms.length === 0 || isSubmitting}
                 >
-                  <Plus size={14} />
-                  {batchMode ? 'Add Batch' : 'Add Image'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={14} className="spin" />
+                      {batchMode ? 'Adding...' : 'Adding...'}
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={14} />
+                      {batchMode ? 'Add Batch' : 'Add Image'}
+                    </>
+                  )}
                 </button>
               </div>
             </form>

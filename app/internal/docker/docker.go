@@ -80,26 +80,19 @@ func detectRegistry(imageName string) string {
 
 func extractImageName(imageName string) string {
 	parts := strings.Split(imageName, "/")
-
-	if len(parts) == 1 {
-		return parts[0]
+	if len(parts) == 0 {
+		return imageName
 	}
-
-	if len(parts) >= 2 {
-		firstPart := parts[0]
-		if strings.Contains(firstPart, ".") || firstPart == "localhost" {
-			return strings.Join(parts[1:], "_")
-		}
-		return strings.Join(parts, "_")
-	}
-
-	return imageName
+	return parts[len(parts)-1]
 }
 
 func (s *DockerService) ExportImage(ctx context.Context, fullName, imageName, tag, platform string) (string, error) {
 	registry := detectRegistry(imageName)
 
-	platformClean := strings.ReplaceAll(platform, "/", "_")
+	platformClean := platform
+	if idx := strings.LastIndex(platform, "/"); idx != -1 {
+		platformClean = platform[idx+1:]
+	}
 
 	imageNameClean := extractImageName(imageName)
 	tagClean := tag
@@ -107,7 +100,7 @@ func (s *DockerService) ExportImage(ctx context.Context, fullName, imageName, ta
 		tagClean = "latest"
 	}
 
-	filename := fmt.Sprintf("%s-%s-%s-%s.tar.gz", registry, imageNameClean, tagClean, platformClean)
+	filename := fmt.Sprintf("%s_%s_%s_%s.tar.gz", registry, imageNameClean, tagClean, platformClean)
 	exportPath := filepath.Join(s.cfg.ExportPath, filename)
 
 	if err := os.MkdirAll(s.cfg.ExportPath, 0755); err != nil {

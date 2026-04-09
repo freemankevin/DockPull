@@ -220,3 +220,24 @@ func GetPendingImages(db *sql.DB) ([]models.Image, error) {
 
 	return images, nil
 }
+
+// GetImageByNameTagPlatform checks if an image with the same name, tag and platform exists
+// with status 'pending' or 'pulling' (active status)
+func GetImageByNameTagPlatform(db *sql.DB, name, tag, platform string) (*models.Image, error) {
+	query := `SELECT id, name, tag, full_name, platform, status, retry_count, 
+			  error_message, export_path, exported_at, created_at, updated_at, is_auto_export 
+			  FROM images WHERE name = ? AND tag = ? AND platform = ? AND status IN ('pending', 'pulling')`
+
+	var img models.Image
+	err := db.QueryRow(query, name, tag, platform).Scan(&img.ID, &img.Name, &img.Tag, &img.FullName,
+		&img.Platform, &img.Status, &img.RetryCount, &img.ErrorMessage, &img.ExportPath,
+		&img.ExportedAt, &img.CreatedAt, &img.UpdatedAt, &img.IsAutoExport)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &img, nil
+}

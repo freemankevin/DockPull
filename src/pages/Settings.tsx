@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import {
-  Save, FlaskConical, Folder, CheckCircle, AlertCircle,
+  Save, FlaskConical, Folder,
   Settings as SettingsIcon, Bell, RefreshCw, Cpu, ChevronRight, X, Key
 } from 'lucide-react'
 import { useConfig } from '../hooks/useConfig'
+import { useNotification } from '../context/NotificationContext'
 import { webhookApi, browseApi } from '../api'
 import Select from '../components/Select'
 
-type ToastType = 'success' | 'error' | null
 type TabId = 'general' | 'retry' | 'webhook' | 'registry'
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
@@ -39,20 +39,15 @@ function SettingRow({
 
 export default function Settings() {
   const { config, loading, updateConfig } = useConfig()
+  const { addNotification } = useNotification()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<any>({})
-  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('general')
   const [browseOpen, setBrowseOpen] = useState(false)
   const [browseDirs, setBrowseDirs] = useState<any[]>([])
   const [browseCurrent, setBrowseCurrent] = useState('')
   const [browseParent, setBrowseParent] = useState('')
   const [browseLoading, setBrowseLoading] = useState(false)
-
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 3500)
-  }
 
   const getValue = (key: string) => formData[key] ?? config?.[key as keyof typeof config]
 
@@ -62,9 +57,9 @@ export default function Settings() {
     try {
       await updateConfig({ ...config, ...formData })
       setFormData({})
-      showToast('success', 'Settings saved successfully')
+      addNotification('success', 'Settings saved successfully')
     } catch {
-      showToast('error', 'Failed to save settings')
+      addNotification('error', 'Failed to save settings')
     } finally {
       setSaving(false)
     }
@@ -73,9 +68,9 @@ export default function Settings() {
   const handleTestWebhook = async () => {
     try {
       await webhookApi.test()
-      showToast('success', 'Test webhook sent successfully')
+      addNotification('success', 'Test webhook sent successfully')
     } catch (err: any) {
-      showToast('error', 'Failed to send: ' + err.message)
+      addNotification('error', 'Failed to send webhook: ' + err.message)
     }
   }
 
@@ -88,7 +83,7 @@ export default function Settings() {
       setBrowseParent(res.data.parent)
       setBrowseDirs(res.data.dirs || [])
     } catch (err: any) {
-      showToast('error', 'Failed to browse: ' + err.message)
+      addNotification('error', 'Failed to browse: ' + err.message)
       setBrowseOpen(false)
     } finally {
       setBrowseLoading(false)
@@ -103,7 +98,7 @@ export default function Settings() {
       setBrowseParent(res.data.parent)
       setBrowseDirs(res.data.dirs || [])
     } catch (err: any) {
-      showToast('error', 'Failed to browse: ' + err.message)
+      addNotification('error', 'Failed to browse: ' + err.message)
     } finally {
       setBrowseLoading(false)
     }
@@ -133,23 +128,6 @@ export default function Settings() {
   return (
     <div className="content-center">
       <div className="page-header"><h1>Settings</h1></div>
-
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
-          display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '10px 14px', borderRadius: 'var(--radius-lg)',
-          background: toast.type === 'success' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-          border: `1px solid ${toast.type === 'success' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-          color: toast.type === 'success' ? 'var(--green-500)' : 'var(--red-500)',
-          fontSize: '13px', fontWeight: 500,
-          boxShadow: 'var(--shadow-lg)', backdropFilter: 'blur(8px)',
-          animation: 'fadeIn 0.2s ease',
-        }}>
-          {toast.type === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-          {toast.message}
-        </div>
-      )}
 
       {browseOpen && (
         <div style={{

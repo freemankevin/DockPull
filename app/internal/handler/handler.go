@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,6 +48,11 @@ func (h *Handler) CreateImage(c *gin.Context) {
 
 	image, err := h.imageService.CreateImage(&req)
 	if err != nil {
+		// Check if error is due to duplicate image
+		if strings.Contains(err.Error(), "already exists") {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "duplicate": true})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

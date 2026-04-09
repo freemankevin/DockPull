@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, FileText, ChevronDown, ChevronUp, Copy, CheckCircle } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, FileText, ChevronDown, ChevronUp, Copy, CheckCircle, Plus, AlertCircle, Clock, ArrowRightLeft, Download, ArrowRightFromLine } from 'lucide-react'
 import { imagesApi } from '../api'
 import { useImages } from '../hooks/useImages'
 import type { Image, ImageLog } from '../types'
 
-const ACTION_META: Record<string, { label: string; color: string; bg: string }> = {
-  CREATE:         { label: 'Created',        color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-  UPDATE:         { label: 'Updated',        color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  PULL_START:     { label: 'Pull Started',   color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-  PULL_SUCCESS:   { label: 'Pull Success',   color: '#22c55e', bg: 'rgba(34,197,94,0.1)'  },
-  PULL_FAILED:    { label: 'Pull Failed',    color: '#ef4444', bg: 'rgba(239,68,68,0.1)'  },
-  EXPORT_START:   { label: 'Export Started', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-  EXPORT_SUCCESS: { label: 'Export Success', color: '#22c55e', bg: 'rgba(34,197,94,0.1)'  },
-  EXPORT_FAILED:  { label: 'Export Failed',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)'  },
-  PLATFORM_CHANGED: { label: 'Platform Changed', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+const ACTION_META: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
+  CREATE:         { label: 'Created',        color: 'var(--blue-500)',   bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.2)',  icon: <Plus size={11} /> },
+  UPDATE:         { label: 'Updated',        color: 'var(--yellow-500)', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.2)',  icon: <Clock size={11} /> },
+  PULL_START:     { label: 'Pulling',        color: 'var(--purple-500)', bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.2)',  icon: <Download size={11} /> },
+  PULL_SUCCESS:   { label: 'Success',        color: 'var(--green-500)',  bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.2)',   icon: <CheckCircle size={11} /> },
+  PULL_FAILED:    { label: 'Failed',         color: 'var(--red-500)',    bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.2)',   icon: <AlertCircle size={11} /> },
+  EXPORT_START:   { label: 'Exporting',      color: 'var(--purple-500)', bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.2)',  icon: <ArrowRightFromLine size={11} /> },
+  EXPORT_SUCCESS: { label: 'Exported',       color: 'var(--green-500)',  bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.2)',   icon: <CheckCircle size={11} /> },
+  EXPORT_FAILED:  { label: 'Failed',         color: 'var(--red-500)',    bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.2)',   icon: <AlertCircle size={11} /> },
+  PLATFORM_CHANGED: { label: 'Changed',     color: 'var(--yellow-500)', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.2)',  icon: <ArrowRightLeft size={11} /> },
 }
 
 const PAGE_SIZE = 20
@@ -25,16 +25,24 @@ const ALL_ACTIONS = [
 ]
 
 function ActionBadge({ action }: { action: string }) {
-  const meta = ACTION_META[action] || { label: action, color: 'var(--text-secondary)', bg: 'var(--bg-tertiary)' }
+  const meta = ACTION_META[action] || { 
+    label: action, 
+    color: 'var(--text-secondary)', 
+    bg: 'var(--bg-tertiary)', 
+    border: 'var(--border-color)',
+    icon: null 
+  }
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center',
-      padding: '2px 8px', borderRadius: '4px',
-      fontSize: '11.5px', fontWeight: 500,
+      display: 'inline-flex', alignItems: 'center', gap: '5px',
+      padding: '3px 10px', borderRadius: '20px',
+      fontSize: '12px', fontWeight: 500,
       color: meta.color, background: meta.bg,
+      border: `1px solid ${meta.border}`,
       whiteSpace: 'nowrap', flexShrink: 0,
-      letterSpacing: '0.01em',
+      lineHeight: 1.5,
     }}>
+      {meta.icon}
       {meta.label}
     </span>
   )
@@ -50,9 +58,22 @@ function FilterChip({
 }) {
   const [open, setOpen] = useState(false)
   const selected = options.find(o => o.value === value)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
@@ -80,7 +101,6 @@ function FilterChip({
             boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden',
             animation: 'fadeIn .12s ease',
           }}
-          onMouseLeave={() => setOpen(false)}
         >
           {options.map(opt => (
             <div
@@ -112,7 +132,6 @@ function ExpandableText({
   expandKey, 
   expandedLogs, 
   setExpandedLogs,
-  maxWidth = 50,
   fontSize = '13px',
   fontFamily = 'inherit',
   color = 'var(--text-secondary)',
@@ -122,15 +141,26 @@ function ExpandableText({
   expandKey: string
   expandedLogs: Set<string>
   setExpandedLogs: React.Dispatch<React.SetStateAction<Set<string>>>
-  maxWidth?: number
   fontSize?: string
   fontFamily?: string
   color?: string
   showCopy?: boolean
 }) {
   const isExpanded = expandedLogs.has(expandKey)
-  const isLong = text.length > maxWidth
+  const [isOverflowing, setIsOverflowing] = useState(false)
+  const textRef = useRef<HTMLSpanElement>(null)
   const [copied, setCopied] = useState(false)
+  
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (textRef.current) {
+        setIsOverflowing(textRef.current.scrollWidth > textRef.current.clientWidth)
+      }
+    }
+    checkOverflow()
+    window.addEventListener('resize', checkOverflow)
+    return () => window.removeEventListener('resize', checkOverflow)
+  }, [text])
   
   const toggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -161,93 +191,50 @@ function ExpandableText({
     }
   }
   
-  if (!isLong && !showCopy) {
-    return (
-      <span style={{
-        fontSize, fontFamily, color,
-        display: 'block',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}>
-        {text}
-      </span>
-    )
-  }
-  
-  if (!isLong && showCopy) {
-    return (
-      <div style={{ 
-        display: 'inline-flex', 
-        alignItems: 'center', 
-        gap: '4px',
-      }}>
-        <span style={{
-          fontSize, fontFamily, color,
-          whiteSpace: 'nowrap',
-        }}>
-          {text}
-        </span>
-        <button
-          onClick={handleCopy}
-          style={{
-            border: 'none',
-            background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-            cursor: 'pointer',
-            padding: '2px',
-            display: 'flex',
-            alignItems: 'center',
-            color: copied ? 'var(--green-500)' : 'var(--text-muted)',
-            lineHeight: 1,
-            borderRadius: '3px',
-          }}
-          title={copied ? 'Copied!' : 'Copy message'}
-        >
-          {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
-        </button>
-      </div>
-    )
-  }
-  
   return (
     <div style={{ 
       display: 'flex', 
-      alignItems: 'center', 
+      alignItems: isExpanded ? 'flex-start' : 'center', 
       gap: '4px',
       minWidth: 0,
     }}>
-      <span style={{
-        fontSize, fontFamily, color,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: isExpanded ? 'normal' : 'nowrap',
-        wordBreak: isExpanded ? 'break-word' : 'normal',
-        flex: '0 1 auto',
-        minWidth: 0,
-      }}>
+      <span 
+        ref={textRef}
+        style={{
+          fontSize, fontFamily, color,
+          overflow: isExpanded ? 'visible' : 'hidden',
+          textOverflow: isExpanded ? 'clip' : 'ellipsis',
+          whiteSpace: isExpanded ? 'normal' : 'nowrap',
+          wordBreak: isExpanded ? 'break-word' : 'normal',
+          flex: '1',
+          minWidth: 0,
+          lineHeight: 1.4,
+        }}
+        title={isExpanded ? undefined : text}
+      >
         {text}
+        {showCopy && (
+          <button
+            onClick={handleCopy}
+            style={{
+              border: 'none',
+              background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+              cursor: 'pointer',
+              padding: '2px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              color: copied ? 'var(--green-500)' : 'var(--text-muted)',
+              marginLeft: '4px',
+              verticalAlign: 'middle',
+              borderRadius: '3px',
+            }}
+            title={copied ? 'Copied!' : 'Copy message'}
+          >
+            {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
+          </button>
+        )}
       </span>
-      {showCopy && isExpanded && (
-        <button
-          onClick={handleCopy}
-          style={{
-            border: 'none',
-            background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-            cursor: 'pointer',
-            padding: '2px',
-            display: 'flex',
-            alignItems: 'center',
-            color: copied ? 'var(--green-500)' : 'var(--text-muted)',
-            flexShrink: 0,
-            lineHeight: 1,
-            borderRadius: '3px',
-          }}
-          title={copied ? 'Copied!' : 'Copy message'}
-        >
-          {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
-        </button>
-      )}
-      {isLong && (
+      {isOverflowing && !isExpanded && (
         <button
           onClick={toggleExpand}
           style={{
@@ -261,9 +248,28 @@ function ExpandableText({
             flexShrink: 0,
             lineHeight: 1,
           }}
-          title={isExpanded ? 'Collapse' : 'Expand'}
+          title="Expand"
         >
-          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          <ChevronDown size={12} />
+        </button>
+      )}
+      {isExpanded && (
+        <button
+          onClick={toggleExpand}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+            lineHeight: 1,
+          }}
+          title="Collapse"
+        >
+          <ChevronUp size={12} />
         </button>
       )}
     </div>
@@ -368,11 +374,11 @@ const filtered = logs.filter(log => {
 
       {/* Filter Bar — Railway style */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '8px',
-        marginBottom: '12px', flexWrap: 'wrap',
+        display: 'flex', alignItems: 'center', gap: '12px',
+        marginBottom: '12px', flexWrap: 'nowrap',
       }}>
         {/* Search */}
-        <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '360px' }}>
+        <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
           <Search size={13} style={{
             position: 'absolute', left: '10px', top: '50%',
             transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none',
@@ -395,27 +401,31 @@ const filtered = logs.filter(log => {
           />
         </div>
 
-        <div style={{ width: '1px', height: '20px', background: 'var(--border-color)', margin: '0 2px' }} />
+        {/* Divider */}
+        <div style={{ width: '1px', height: '20px', background: 'var(--border-color)', flexShrink: 0 }} />
 
-        <FilterChip label="All Platforms" value={selectedPlatform} options={PLATFORM_OPTIONS} onChange={setSelectedPlatform} />
-        <FilterChip label="All Images" value={selectedImageKey} options={imageOptions} onChange={setSelectedImageKey} />
-        <FilterChip label="All Actions" value={selectedAction} options={ALL_ACTIONS} onChange={setSelectedAction} />
+        {/* Filters on the right */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <FilterChip label="All Platforms" value={selectedPlatform} options={PLATFORM_OPTIONS} onChange={setSelectedPlatform} />
+          <FilterChip label="All Images" value={selectedImageKey} options={imageOptions} onChange={setSelectedImageKey} />
+          <FilterChip label="All Actions" value={selectedAction} options={ALL_ACTIONS} onChange={setSelectedAction} />
 
-        {(selectedImageKey !== 'all' || selectedAction !== 'all' || selectedPlatform !== 'all') && (
-          <button
-            onClick={() => { setSelectedImageKey('all'); setSelectedAction('all'); setSelectedPlatform('all') }}
-            style={{
-              padding: '5px 10px', height: '32px', fontSize: '12px',
-              border: 'none', borderRadius: '6px', cursor: 'pointer',
-              background: 'transparent', color: 'var(--text-muted)',
-              transition: 'color .12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-          >
-            Clear filters
-          </button>
-        )}
+          {(selectedImageKey !== 'all' || selectedAction !== 'all' || selectedPlatform !== 'all') && (
+            <button
+              onClick={() => { setSelectedImageKey('all'); setSelectedAction('all'); setSelectedPlatform('all') }}
+              style={{
+                padding: '5px 10px', height: '32px', fontSize: '12px',
+                border: 'none', borderRadius: '6px', cursor: 'pointer',
+                background: 'transparent', color: 'var(--text-muted)',
+                transition: 'color .12s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Log Table */}
@@ -427,8 +437,8 @@ const filtered = logs.filter(log => {
         {/* Table Header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '160px 360px 110px 1fr',
-          gap: '4px',
+          gridTemplateColumns: '140px 1.2fr 100px 2fr',
+          gap: '12px',
           padding: '8px 16px',
           background: 'var(--bg-tertiary)',
           borderBottom: '1px solid var(--border-color)',
@@ -468,11 +478,11 @@ const filtered = logs.filter(log => {
                 key={log.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '160px 360px 110px 1fr',
-                  gap: '4px',
+                  gridTemplateColumns: '140px 1.2fr 100px 2fr',
+                  gap: '12px',
                   padding: '10px 16px',
                   borderBottom: i < paginated.length - 1 ? '1px solid var(--border-color)' : 'none',
-                  alignItems: messageExpanded ? 'flex-start' : 'center',
+                  alignItems: (expandedLogs.has(`${log.id}-image`) || messageExpanded) ? 'flex-start' : 'center',
                   transition: 'background .1s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
@@ -485,16 +495,16 @@ const filtered = logs.filter(log => {
 
                 {/* Image */}
                 {img ? (
-                  <span style={{
-                    fontSize: '12px',
-                    fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-tertiary)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }} title={`${img.name}:${img.tag}`}>
-                    {img.name}:{img.tag}
-                  </span>
+                  <ExpandableText
+                    text={`${img.name}:${img.tag}`}
+                    expandKey={`${log.id}-image`}
+                    expandedLogs={expandedLogs}
+                    setExpandedLogs={setExpandedLogs}
+                    fontSize="12px"
+                    fontFamily="var(--font-mono)"
+                    color="var(--text-tertiary)"
+                    showCopy={false}
+                  />
                 ) : (
                   <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
                 )}
@@ -510,7 +520,6 @@ const filtered = logs.filter(log => {
                   expandKey={`${log.id}-message`}
                   expandedLogs={expandedLogs}
                   setExpandedLogs={setExpandedLogs}
-                  maxWidth={100}
                   showCopy={true}
                 />
               </div>
@@ -536,14 +545,14 @@ const filtered = logs.filter(log => {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: '28px', height: '28px',
-                  border: '1px solid var(--border-color)', borderRadius: '5px',
+                  border: 'none', borderRadius: '5px',
                   background: 'transparent', cursor: page === 0 ? 'not-allowed' : 'pointer',
-                  color: page === 0 ? 'var(--text-muted)' : 'var(--text-secondary)',
+                  color: page === 0 ? 'var(--text-muted)' : 'var(--purple-500)',
                   opacity: page === 0 ? .4 : 1,
                   transition: 'all .12s',
                 }}
               >
-                <ChevronLeft size={13} />
+                <ChevronLeft size={16} />
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
@@ -551,14 +560,14 @@ const filtered = logs.filter(log => {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: '28px', height: '28px',
-                  border: '1px solid var(--border-color)', borderRadius: '5px',
+                  border: 'none', borderRadius: '5px',
                   background: 'transparent', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
-                  color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
+                  color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--purple-500)',
                   opacity: page >= totalPages - 1 ? .4 : 1,
                   transition: 'all .12s',
                 }}
               >
-                <ChevronRight size={13} />
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>

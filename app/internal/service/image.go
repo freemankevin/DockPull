@@ -28,22 +28,36 @@ func NewImageService(db *sql.DB, dockerSvc *docker.DockerService, cfg *config.Co
 }
 
 func (s *ImageService) CreateImage(req *models.CreateImageRequest) (*models.Image, error) {
+	// Set defaults
+	name := req.Name
+	tag := req.Tag
+	platform := req.Platform
+
+	if tag == "" {
+		tag = "latest"
+	}
+	if platform == "" {
+		platform = s.cfg.DefaultPlatform
+	}
+
+	// Check for duplicates: same name + tag + platform with pending/pulling status
+	existingImage, err := database.GetImageByNameTagPlatform(s.db, name, tag, platform)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check for duplicates: %w", err)
+	}
+	if existingImage != nil {
+		return nil, fmt.Errorf("image %s:%s (%s) already exists with status %s", name, tag, platform, existingImage.Status)
+	}
+
 	image := &models.Image{
-		Name:         req.Name,
-		Tag:          req.Tag,
-		Platform:     req.Platform,
+		Name:         name,
+		Tag:          tag,
+		Platform:     platform,
 		Status:       "pending",
 		IsAutoExport: req.IsAutoExport,
 	}
 
-	if image.Tag == "" {
-		image.Tag = "latest"
-	}
-	if image.Platform == "" {
-		image.Platform = s.cfg.DefaultPlatform
-	}
-
-	err := database.CreateImage(s.db, image)
+	err = database.CreateImage(s.db, image)
 	if err != nil {
 		return nil, err
 	}
