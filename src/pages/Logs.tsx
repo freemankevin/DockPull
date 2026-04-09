@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, FileText, ChevronDown, ChevronUp, Copy, CheckCircle } from 'lucide-react'
 import { imagesApi } from '../api'
 import { useImages } from '../hooks/useImages'
 import type { Image, ImageLog } from '../types'
@@ -75,7 +75,7 @@ function FilterChip({
         <div
           style={{
             position: 'absolute', top: 'calc(100% + 4px)', left: 0,
-            minWidth: '180px', background: 'var(--bg-elevated)',
+            minWidth: '200px', background: 'var(--bg-elevated)',
             border: '1px solid var(--border-color)', borderRadius: '8px',
             boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden',
             animation: 'fadeIn .12s ease',
@@ -91,6 +91,9 @@ function FilterChip({
                 color: opt.value === value ? 'var(--purple-400)' : 'var(--text-primary)',
                 background: opt.value === value ? 'var(--accent-bg)' : 'transparent',
                 transition: 'background .1s',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
               onMouseEnter={e => { if (opt.value !== value) (e.currentTarget as HTMLElement).style.background = 'var(--bg-tertiary)' }}
               onMouseLeave={e => { if (opt.value !== value) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
@@ -104,46 +107,206 @@ function FilterChip({
   )
 }
 
+function ExpandableText({ 
+  text, 
+  expandKey, 
+  expandedLogs, 
+  setExpandedLogs,
+  maxWidth = 50,
+  fontSize = '13px',
+  fontFamily = 'inherit',
+  color = 'var(--text-secondary)',
+  showCopy = false
+}: {
+  text: string
+  expandKey: string
+  expandedLogs: Set<string>
+  setExpandedLogs: React.Dispatch<React.SetStateAction<Set<string>>>
+  maxWidth?: number
+  fontSize?: string
+  fontFamily?: string
+  color?: string
+  showCopy?: boolean
+}) {
+  const isExpanded = expandedLogs.has(expandKey)
+  const isLong = text.length > maxWidth
+  const [copied, setCopied] = useState(false)
+  
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const newSet = new Set(expandedLogs)
+    if (isExpanded) {
+      newSet.delete(expandKey)
+    } else {
+      newSet.add(expandKey)
+    }
+    setExpandedLogs(newSet)
+  }
+  
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+  }
+  
+  if (!isLong && !showCopy) {
+    return (
+      <span style={{
+        fontSize, fontFamily, color,
+        display: 'block',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}>
+        {text}
+      </span>
+    )
+  }
+  
+  if (!isLong && showCopy) {
+    return (
+      <div style={{ 
+        display: 'inline-flex', 
+        alignItems: 'center', 
+        gap: '4px',
+      }}>
+        <span style={{
+          fontSize, fontFamily, color,
+          whiteSpace: 'nowrap',
+        }}>
+          {text}
+        </span>
+        <button
+          onClick={handleCopy}
+          style={{
+            border: 'none',
+            background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+            cursor: 'pointer',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            color: copied ? 'var(--green-500)' : 'var(--text-muted)',
+            lineHeight: 1,
+            borderRadius: '3px',
+          }}
+          title={copied ? 'Copied!' : 'Copy message'}
+        >
+          {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
+        </button>
+      </div>
+    )
+  }
+  
+  return (
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '4px',
+      minWidth: 0,
+    }}>
+      <span style={{
+        fontSize, fontFamily, color,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: isExpanded ? 'normal' : 'nowrap',
+        wordBreak: isExpanded ? 'break-word' : 'normal',
+        flex: '0 1 auto',
+        minWidth: 0,
+      }}>
+        {text}
+      </span>
+      {showCopy && isExpanded && (
+        <button
+          onClick={handleCopy}
+          style={{
+            border: 'none',
+            background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+            cursor: 'pointer',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            color: copied ? 'var(--green-500)' : 'var(--text-muted)',
+            flexShrink: 0,
+            lineHeight: 1,
+            borderRadius: '3px',
+          }}
+          title={copied ? 'Copied!' : 'Copy message'}
+        >
+          {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
+        </button>
+      )}
+      {isLong && (
+        <button
+          onClick={toggleExpand}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+            lineHeight: 1,
+          }}
+          title={isExpanded ? 'Collapse' : 'Expand'}
+        >
+          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Logs() {
   const [searchParams] = useSearchParams()
-  const imageIdFromUrl = searchParams.get('imageId')
   const { images } = useImages()
 
   const [logs, setLogs] = useState<ImageLog[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedImageId, setSelectedImageId] = useState<string>(imageIdFromUrl || 'all')
+  const [selectedImageKey, setSelectedImageKey] = useState<string>('all')
   const [selectedAction, setSelectedAction] = useState<string>('all')
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('all')
   const [page, setPage] = useState(0)
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (imageIdFromUrl) setSelectedImageId(imageIdFromUrl)
-  }, [imageIdFromUrl])
+    const imageIdFromUrl = searchParams.get('imageId')
+    if (imageIdFromUrl) {
+      const img = images.find(i => String(i.id) === imageIdFromUrl)
+      if (img) setSelectedImageKey(`${img.name}:${img.tag}`)
+    }
+  }, [searchParams, images])
 
   useEffect(() => {
     fetchLogs()
-  }, [selectedImageId, images.length])
+  }, [images.length])
 
-  // reset page on filter change
-  useEffect(() => { setPage(0) }, [searchQuery, selectedAction, selectedImageId])
+  useEffect(() => { setPage(0) }, [searchQuery, selectedAction, selectedImageKey, selectedPlatform])
 
   const fetchLogs = async () => {
     setLoading(true)
     try {
-      if (selectedImageId === 'all') {
-        const all: ImageLog[] = []
-        for (const img of images) {
-          const res = await imagesApi.logs(img.id)
-          all.push(...(res.data || []))
-        }
-        all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        setLogs(all)
-      } else {
-        const res = await imagesApi.logs(parseInt(selectedImageId))
-        const data: ImageLog[] = res.data || []
-        data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        setLogs(data)
+      const all: ImageLog[] = []
+      for (const img of images) {
+        const res = await imagesApi.logs(img.id)
+        all.push(...(res.data || []))
       }
+      all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      setLogs(all)
     } catch {
       setLogs([])
     } finally {
@@ -153,17 +316,27 @@ export default function Logs() {
 
   const getImageInfo = (id: number): Image | undefined => images.find(img => img.id === id)
 
-  const imageOptions = [
-    { value: 'all', label: 'All Images' },
-    ...images.map(img => ({ value: String(img.id), label: `${img.name}:${img.tag}` }))
-  ]
+const PLATFORM_OPTIONS = [
+  { value: 'all', label: 'All Platforms' },
+  { value: 'linux/amd64', label: 'AMD64' },
+  { value: 'linux/arm64', label: 'ARM64' },
+]
 
-  const filtered = logs.filter(log => {
-    const q = searchQuery.toLowerCase()
-    const matchSearch = !q || log.message.toLowerCase().includes(q) || log.action.toLowerCase().includes(q)
-    const matchAction = selectedAction === 'all' || log.action === selectedAction
-    return matchSearch && matchAction
-  })
+const uniqueImageKeys = [...new Set(images.map(img => `${img.name}:${img.tag}`))]
+const imageOptions = [
+  { value: 'all', label: 'All Images' },
+  ...uniqueImageKeys.map(key => ({ value: key, label: key }))
+]
+
+const filtered = logs.filter(log => {
+  const q = searchQuery.toLowerCase()
+  const matchSearch = !q || log.message.toLowerCase().includes(q) || log.action.toLowerCase().includes(q)
+  const matchAction = selectedAction === 'all' || log.action === selectedAction
+  const img = getImageInfo(log.image_id)
+  const matchImage = selectedImageKey === 'all' || (img && `${img.name}:${img.tag}` === selectedImageKey)
+  const matchPlatform = selectedPlatform === 'all' || (img && img.platform === selectedPlatform)
+  return matchSearch && matchAction && matchImage && matchPlatform
+})
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -224,12 +397,13 @@ export default function Logs() {
 
         <div style={{ width: '1px', height: '20px', background: 'var(--border-color)', margin: '0 2px' }} />
 
-        <FilterChip label="All Images" value={selectedImageId} options={imageOptions} onChange={setSelectedImageId} />
+        <FilterChip label="All Platforms" value={selectedPlatform} options={PLATFORM_OPTIONS} onChange={setSelectedPlatform} />
+        <FilterChip label="All Images" value={selectedImageKey} options={imageOptions} onChange={setSelectedImageKey} />
         <FilterChip label="All Actions" value={selectedAction} options={ALL_ACTIONS} onChange={setSelectedAction} />
 
-        {(selectedImageId !== 'all' || selectedAction !== 'all') && (
+        {(selectedImageKey !== 'all' || selectedAction !== 'all' || selectedPlatform !== 'all') && (
           <button
-            onClick={() => { setSelectedImageId('all'); setSelectedAction('all') }}
+            onClick={() => { setSelectedImageKey('all'); setSelectedAction('all'); setSelectedPlatform('all') }}
             style={{
               padding: '5px 10px', height: '32px', fontSize: '12px',
               border: 'none', borderRadius: '6px', cursor: 'pointer',
@@ -253,18 +427,20 @@ export default function Logs() {
         {/* Table Header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '160px 130px 1fr 160px',
+          gridTemplateColumns: '160px 360px 110px 1fr',
+          gap: '4px',
           padding: '8px 16px',
           background: 'var(--bg-tertiary)',
           borderBottom: '1px solid var(--border-color)',
           fontSize: '11.5px', fontWeight: 500,
           color: 'var(--text-muted)', letterSpacing: '0.04em',
           textTransform: 'uppercase',
+          alignItems: 'center',
         }}>
-          <span>Time</span>
-          <span>Action</span>
-          <span>Message</span>
-          <span>Image</span>
+          <span style={{ textAlign: 'left' }}>Time</span>
+          <span style={{ textAlign: 'left' }}>Image</span>
+          <span style={{ textAlign: 'left' }}>Action</span>
+          <span style={{ textAlign: 'left' }}>Message</span>
         </div>
 
         {/* Rows */}
@@ -278,7 +454,7 @@ export default function Logs() {
             <FileText size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block', strokeWidth: 1.25 }} />
             <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '4px' }}>No logs found</div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-              {searchQuery || selectedAction !== 'all' || selectedImageId !== 'all'
+              {searchQuery || selectedAction !== 'all' || selectedImageKey !== 'all' || selectedPlatform !== 'all'
                 ? 'Try adjusting your filters'
                 : 'Logs will appear here as images are processed'}
             </div>
@@ -286,15 +462,17 @@ export default function Logs() {
         ) : (
           paginated.map((log, i) => {
             const img = getImageInfo(log.image_id)
+            const messageExpanded = expandedLogs.has(`${log.id}-message`)
             return (
               <div
                 key={log.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '160px 130px 1fr 160px',
+                  gridTemplateColumns: '160px 360px 110px 1fr',
+                  gap: '4px',
                   padding: '10px 16px',
                   borderBottom: i < paginated.length - 1 ? '1px solid var(--border-color)' : 'none',
-                  alignItems: 'center', gap: '12px',
+                  alignItems: messageExpanded ? 'flex-start' : 'center',
                   transition: 'background .1s',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
@@ -305,29 +483,36 @@ export default function Logs() {
                   {formatTime(log.created_at)}
                 </span>
 
-                {/* Action badge */}
-                <div><ActionBadge action={log.action} /></div>
-
-                {/* Message */}
-                <span style={{
-                  fontSize: '13px', color: 'var(--text-secondary)',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }} title={log.message}>
-                  {log.message}
-                </span>
-
                 {/* Image */}
                 {img ? (
                   <span style={{
-                    fontSize: '12px', fontFamily: 'var(--font-mono)',
+                    fontSize: '12px',
+                    fontFamily: 'var(--font-mono)',
                     color: 'var(--text-tertiary)',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }} title={`${img.name}:${img.tag}`}>
                     {img.name}:{img.tag}
                   </span>
                 ) : (
                   <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
                 )}
+
+                {/* Action badge */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                  <ActionBadge action={log.action} />
+                </div>
+
+                {/* Message */}
+                <ExpandableText
+                  text={log.message}
+                  expandKey={`${log.id}-message`}
+                  expandedLogs={expandedLogs}
+                  setExpandedLogs={setExpandedLogs}
+                  maxWidth={100}
+                  showCopy={true}
+                />
               </div>
             )
           })
@@ -349,31 +534,31 @@ export default function Logs() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  padding: '4px 10px', height: '28px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '28px', height: '28px',
                   border: '1px solid var(--border-color)', borderRadius: '5px',
                   background: 'transparent', cursor: page === 0 ? 'not-allowed' : 'pointer',
                   color: page === 0 ? 'var(--text-muted)' : 'var(--text-secondary)',
-                  fontSize: '12.5px', opacity: page === 0 ? .4 : 1,
+                  opacity: page === 0 ? .4 : 1,
                   transition: 'all .12s',
                 }}
               >
-                <ChevronLeft size={13} /> Older
+                <ChevronLeft size={13} />
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  padding: '4px 10px', height: '28px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '28px', height: '28px',
                   border: '1px solid var(--border-color)', borderRadius: '5px',
                   background: 'transparent', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
                   color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
-                  fontSize: '12.5px', opacity: page >= totalPages - 1 ? .4 : 1,
+                  opacity: page >= totalPages - 1 ? .4 : 1,
                   transition: 'all .12s',
                 }}
               >
-                Newer <ChevronRight size={13} />
+                <ChevronRight size={13} />
               </button>
             </div>
           </div>

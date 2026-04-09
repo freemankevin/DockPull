@@ -29,6 +29,14 @@ export function useImages() {
 
   const createImage = async (data: any) => {
     try {
+      const existingImage = images.find(
+        img => img.name === data.name && img.tag === data.tag && img.platform === data.platform
+      )
+      
+      if (existingImage) {
+        await imagesApi.delete(existingImage.id)
+      }
+      
       await imagesApi.create(data)
       await fetchImages()
       return true
