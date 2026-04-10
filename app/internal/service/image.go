@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type ImageService struct {
@@ -260,6 +261,59 @@ func (s *WebhookService) SendNotification(title, message string) error {
 			"text": map[string]string{
 				"content": fmt.Sprintf("%s\n%s", title, message),
 			},
+		}
+	case "slack":
+		payload = map[string]interface{}{
+			"text": fmt.Sprintf("*%s*\n%s", title, message),
+		}
+	case "discord":
+		payload = map[string]interface{}{
+			"content": fmt.Sprintf("**%s**\n%s", title, message),
+		}
+	case "telegram":
+		payload = map[string]interface{}{
+			"text":       fmt.Sprintf("*%s*\n%s", title, message),
+			"parse_mode": "Markdown",
+		}
+	case "teams":
+		payload = map[string]interface{}{
+			"type": "message",
+			"attachments": []map[string]interface{}{
+				{
+					"contentType": "application/vnd.microsoft.card.adaptive",
+					"content": map[string]interface{}{
+						"type": "AdaptiveCard",
+						"body": []map[string]interface{}{
+							{
+								"type":   "TextBlock",
+								"text":   title,
+								"weight": "bolder",
+								"size":   "medium",
+							},
+							{
+								"type": "TextBlock",
+								"text": message,
+								"wrap": true,
+							},
+						},
+					},
+				},
+			},
+		}
+	case "line":
+		payload = map[string]interface{}{
+			"messages": []map[string]interface{}{
+				{
+					"type": "text",
+					"text": fmt.Sprintf("%s\n%s", title, message),
+				},
+			},
+		}
+	case "custom":
+		payload = map[string]interface{}{
+			"title":   title,
+			"message": message,
+			"time":    time.Now().Format(time.RFC3339),
 		}
 	default:
 		return fmt.Errorf("unknown webhook type: %s", s.cfg.WebhookType)

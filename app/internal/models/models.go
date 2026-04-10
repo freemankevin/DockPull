@@ -52,30 +52,48 @@ type BatchCreateRequest struct {
 }
 
 type UpdateConfigRequest struct {
-	ExportPath       string `json:"export_path"`
-	RetryMaxAttempts int    `json:"retry_max_attempts"`
-	RetryIntervalSec int    `json:"retry_interval_sec"`
-	EnableWebhook    bool   `json:"enable_webhook"`
-	WebhookURL       string `json:"webhook_url"`
-	WebhookType      string `json:"webhook_type"`
-	ConcurrentPulls  int    `json:"concurrent_pulls"`
-	DefaultPlatform  string `json:"default_platform"`
-	GzipCompression  int    `json:"gzip_compression"`
-	GhcrToken        string `json:"ghcr_token"`
+	ExportPath         string `json:"export_path"`
+	RetryMaxAttempts   int    `json:"retry_max_attempts"`
+	RetryIntervalSec   int    `json:"retry_interval_sec"`
+	EnableWebhook      bool   `json:"enable_webhook"`
+	WebhookURL         string `json:"webhook_url"`
+	WebhookType        string `json:"webhook_type"`
+	ConcurrentPulls    int    `json:"concurrent_pulls"`
+	DefaultPlatform    string `json:"default_platform"`
+	GzipCompression    int    `json:"gzip_compression"`
+	GhcrToken          string `json:"ghcr_token"`
+	DockerHubUsername  string `json:"dockerhub_username"`
+	DockerHubToken     string `json:"dockerhub_token"`
+	QuayToken          string `json:"quay_token"`
+	AcrUsername        string `json:"acr_username"`
+	AcrPassword        string `json:"acr_password"`
+	EcrAccessKeyId     string `json:"ecr_access_key_id"`
+	EcrSecretAccessKey string `json:"ecr_secret_access_key"`
+	EcrRegion          string `json:"ecr_region"`
+	GarToken           string `json:"gar_token"`
 }
 
 // Settings represents application settings stored in database
 type Settings struct {
-	ExportPath       string `json:"export_path" db:"export_path"`
-	RetryMaxAttempts int    `json:"retry_max_attempts" db:"retry_max_attempts"`
-	RetryIntervalSec int    `json:"retry_interval_sec" db:"retry_interval_sec"`
-	EnableWebhook    bool   `json:"enable_webhook" db:"enable_webhook"`
-	WebhookURL       string `json:"webhook_url" db:"webhook_url"`
-	WebhookType      string `json:"webhook_type" db:"webhook_type"`
-	ConcurrentPulls  int    `json:"concurrent_pulls" db:"concurrent_pulls"`
-	DefaultPlatform  string `json:"default_platform" db:"default_platform"`
-	GzipCompression  int    `json:"gzip_compression" db:"gzip_compression"`
-	GhcrToken        string `json:"ghcr_token" db:"ghcr_token"`
+	ExportPath         string `json:"export_path" db:"export_path"`
+	RetryMaxAttempts   int    `json:"retry_max_attempts" db:"retry_max_attempts"`
+	RetryIntervalSec   int    `json:"retry_interval_sec" db:"retry_interval_sec"`
+	EnableWebhook      bool   `json:"enable_webhook" db:"enable_webhook"`
+	WebhookURL         string `json:"webhook_url" db:"webhook_url"`
+	WebhookType        string `json:"webhook_type" db:"webhook_type"`
+	ConcurrentPulls    int    `json:"concurrent_pulls" db:"concurrent_pulls"`
+	DefaultPlatform    string `json:"default_platform" db:"default_platform"`
+	GzipCompression    int    `json:"gzip_compression" db:"gzip_compression"`
+	GhcrToken          string `json:"ghcr_token" db:"ghcr_token"`
+	DockerHubUsername  string `json:"dockerhub_username" db:"dockerhub_username"`
+	DockerHubToken     string `json:"dockerhub_token" db:"dockerhub_token"`
+	QuayToken          string `json:"quay_token" db:"quay_token"`
+	AcrUsername        string `json:"acr_username" db:"acr_username"`
+	AcrPassword        string `json:"acr_password" db:"acr_password"`
+	EcrAccessKeyId     string `json:"ecr_access_key_id" db:"ecr_access_key_id"`
+	EcrSecretAccessKey string `json:"ecr_secret_access_key" db:"ecr_secret_access_key"`
+	EcrRegion          string `json:"ecr_region" db:"ecr_region"`
+	GarToken           string `json:"gar_token" db:"gar_token"`
 }
 
 type LoginRequest struct {
@@ -86,4 +104,9 @@ type LoginRequest struct {
 type LoginResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }

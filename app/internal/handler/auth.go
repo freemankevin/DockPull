@@ -77,6 +77,45 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	var req models.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := c.GetInt64("user_id")
+	username := c.GetString("username")
+
+	user, err := h.getUserByUsername(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "old password is incorrect"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		return
+	}
+
+	query := `UPDATE users SET password = ? WHERE id = ?`
+	if _, err := h.db.Exec(query, hashedPassword, userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update password"})
+		return
+	}
+
+	fmt.Printf("\033[32m%s [INFO] Password changed for user: %s\033[0m\n",
+		time.Now().Format("2006-01-02 15:04:05"), username)
+
+	c.JSON(http.StatusOK, gin.H{"message": "password changed successfully"})
+}
+
 func (h *AuthHandler) InitDefaultUser() error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
 	if err != nil {
@@ -94,6 +133,28 @@ func (h *AuthHandler) InitDefaultUser() error {
 	rowsAffected, _ := result.RowsAffected()
 	fmt.Printf("\033[32m%s [INFO] Default user initialized/updated, rows affected: %d\033[0m\n",
 		time.Now().Format("2006-01-02 15:04:05"), rowsAffected)
+
+	return nil
+}
+
+func (h *AuthHandler) ResetPasswordToDefault(username string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	result, err := h.db.Exec(`UPDATE users SET password = ? WHERE username = ?`, hashedPassword, username)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("user %s not found", username)
+	}
+
+	fmt.Printf("\033[32m%s [INFO] Password reset to default for user: %s\033[0m\n",
+		time.Now().Format("2006-01-02 15:04:05"), username)
 
 	return nil
 }

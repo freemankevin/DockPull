@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"docker-pull-manager/internal/models"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -17,7 +18,48 @@ func Init(dbPath string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	if err := migrateDatabase(db); err != nil {
+		return nil, err
+	}
+
 	return db, nil
+}
+
+func migrateDatabase(db *sql.DB) error {
+	columns := []string{
+		"dockerhub_username TEXT DEFAULT ''",
+		"dockerhub_token TEXT DEFAULT ''",
+		"quay_token TEXT DEFAULT ''",
+		"acr_username TEXT DEFAULT ''",
+		"acr_password TEXT DEFAULT ''",
+		"ecr_access_key_id TEXT DEFAULT ''",
+		"ecr_secret_access_key TEXT DEFAULT ''",
+		"ecr_region TEXT DEFAULT ''",
+		"gar_token TEXT DEFAULT ''",
+	}
+
+	for _, column := range columns {
+		parts := strings.SplitN(column, " ", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		columnName := parts[0]
+
+		var exists int
+		err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('settings') WHERE name = ?`, columnName).Scan(&exists)
+		if err != nil {
+			return err
+		}
+
+		if exists == 0 {
+			_, err := db.Exec(`ALTER TABLE settings ADD COLUMN ` + column)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func createTables(db *sql.DB) error {
@@ -63,6 +105,15 @@ func createTables(db *sql.DB) error {
 			default_platform TEXT DEFAULT 'linux/amd64,linux/arm64',
 			gzip_compression INTEGER DEFAULT 9,
 			ghcr_token TEXT DEFAULT '',
+			dockerhub_username TEXT DEFAULT '',
+			dockerhub_token TEXT DEFAULT '',
+			quay_token TEXT DEFAULT '',
+			acr_username TEXT DEFAULT '',
+			acr_password TEXT DEFAULT '',
+			ecr_access_key_id TEXT DEFAULT '',
+			ecr_secret_access_key TEXT DEFAULT '',
+			ecr_region TEXT DEFAULT '',
+			gar_token TEXT DEFAULT '',
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_images_status ON images(status)`,
@@ -283,7 +334,9 @@ func GetActiveImageByNameTagPlatform(db *sql.DB, name, tag, platform string) (*m
 // GetSettings retrieves all settings from database
 func GetSettings(db *sql.DB) (*models.Settings, error) {
 	query := `SELECT export_path, retry_max_attempts, retry_interval_sec, enable_webhook,
-			  webhook_url, webhook_type, concurrent_pulls, default_platform, gzip_compression, ghcr_token
+			  webhook_url, webhook_type, concurrent_pulls, default_platform, gzip_compression, ghcr_token,
+			  dockerhub_username, dockerhub_token, quay_token, acr_username, acr_password,
+			  ecr_access_key_id, ecr_secret_access_key, ecr_region, gar_token
 			  FROM settings WHERE id = 1`
 
 	var s models.Settings
@@ -291,21 +344,32 @@ func GetSettings(db *sql.DB) (*models.Settings, error) {
 		&s.ExportPath, &s.RetryMaxAttempts, &s.RetryIntervalSec, &s.EnableWebhook,
 		&s.WebhookURL, &s.WebhookType, &s.ConcurrentPulls, &s.DefaultPlatform,
 		&s.GzipCompression, &s.GhcrToken,
+		&s.DockerHubUsername, &s.DockerHubToken, &s.QuayToken,
+		&s.AcrUsername, &s.AcrPassword,
+		&s.EcrAccessKeyId, &s.EcrSecretAccessKey, &s.EcrRegion, &s.GarToken,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Return default settings
 			return &models.Settings{
-				ExportPath:       "./exports",
-				RetryMaxAttempts: 0,
-				RetryIntervalSec: 30,
-				EnableWebhook:    false,
-				WebhookURL:       "",
-				WebhookType:      "dingtalk",
-				ConcurrentPulls:  3,
-				DefaultPlatform:  "linux/amd64,linux/arm64",
-				GzipCompression:  9,
-				GhcrToken:        "",
+				ExportPath:         "./exports",
+				RetryMaxAttempts:   0,
+				RetryIntervalSec:   30,
+				EnableWebhook:      false,
+				WebhookURL:         "",
+				WebhookType:        "dingtalk",
+				ConcurrentPulls:    3,
+				DefaultPlatform:    "linux/amd64,linux/arm64",
+				GzipCompression:    9,
+				GhcrToken:          "",
+				DockerHubUsername:  "",
+				DockerHubToken:     "",
+				QuayToken:          "",
+				AcrUsername:        "",
+				AcrPassword:        "",
+				EcrAccessKeyId:     "",
+				EcrSecretAccessKey: "",
+				EcrRegion:          "",
+				GarToken:           "",
 			}, nil
 		}
 		return nil, err
@@ -327,6 +391,15 @@ func UpdateSettings(db *sql.DB, s *models.Settings) error {
 			  default_platform = ?,
 			  gzip_compression = ?,
 			  ghcr_token = ?,
+			  dockerhub_username = ?,
+			  dockerhub_token = ?,
+			  quay_token = ?,
+			  acr_username = ?,
+			  acr_password = ?,
+			  ecr_access_key_id = ?,
+			  ecr_secret_access_key = ?,
+			  ecr_region = ?,
+			  gar_token = ?,
 			  updated_at = CURRENT_TIMESTAMP
 			  WHERE id = 1`
 
@@ -334,6 +407,9 @@ func UpdateSettings(db *sql.DB, s *models.Settings) error {
 		s.ExportPath, s.RetryMaxAttempts, s.RetryIntervalSec, s.EnableWebhook,
 		s.WebhookURL, s.WebhookType, s.ConcurrentPulls, s.DefaultPlatform,
 		s.GzipCompression, s.GhcrToken,
+		s.DockerHubUsername, s.DockerHubToken, s.QuayToken,
+		s.AcrUsername, s.AcrPassword,
+		s.EcrAccessKeyId, s.EcrSecretAccessKey, s.EcrRegion, s.GarToken,
 	)
 	return err
 }

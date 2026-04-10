@@ -28,11 +28,20 @@ export interface Config {
   retry_interval_sec: number
   enable_webhook: boolean
   webhook_url: string
-  webhook_type: 'dingtalk' | 'feishu' | 'wechat'
+  webhook_type: 'dingtalk' | 'feishu' | 'wechat' | 'slack' | 'discord' | 'telegram' | 'teams' | 'line' | 'custom'
   concurrent_pulls: number
   default_platform: string
   gzip_compression: number
   ghcr_token: string
+  dockerhub_username: string
+  dockerhub_token: string
+  quay_token: string
+  acr_username: string
+  acr_password: string
+  ecr_access_key_id: string
+  ecr_secret_access_key: string
+  ecr_region: string
+  gar_token: string
 }
 
 export interface CreateImageRequest {

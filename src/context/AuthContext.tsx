@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 
 const API_BASE = 'http://127.0.0.1:9238'
+const SESSION_TIMEOUT = 2 * 60 * 60 * 1000
 
 interface User {
   id: number
@@ -44,6 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = !!user
 
+  const logout = useCallback(() => {
+    setUser(null)
+    localStorage.removeItem('dockpull_token')
+    localStorage.removeItem('dockpull_user')
+  }, [])
+
   useEffect(() => {
     if (user) {
       localStorage.setItem('dockpull_user', JSON.stringify(user))
@@ -80,11 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('dockpull_token')
-  }
-
   const updateAvatar = (avatar: string) => {
     if (user) {
       const updatedUser = { ...user, avatar }
@@ -99,6 +101,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(prev => prev ? { ...prev, avatar: storedAvatar } : null)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+    const resetTimer = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      timeoutId = setTimeout(() => {
+        logout()
+      }, SESSION_TIMEOUT)
+    }
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+    
+    const handleActivity = () => {
+      resetTimer()
+    }
+
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity, { passive: true })
+    })
+
+    resetTimer()
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity)
+      })
+    }
+  }, [isAuthenticated, logout])
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateAvatar, getToken }}>

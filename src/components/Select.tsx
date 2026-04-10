@@ -68,6 +68,8 @@ export default function Select({ value, onChange, options, placeholder = 'Select
           boxShadow: 'var(--shadow-lg)',
           zIndex: 100,
           overflow: 'hidden',
+          maxHeight: '300px',
+          overflowY: 'auto',
         }}>
           {options.map(opt => (
             <div

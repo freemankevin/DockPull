@@ -7,6 +7,7 @@ import (
 	"docker-pull-manager/internal/handler"
 	"docker-pull-manager/internal/middleware"
 	"docker-pull-manager/internal/service"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -16,6 +17,30 @@ import (
 )
 
 func main() {
+	resetPassword := flag.String("reset-password", "", "Reset password for specified user to default (123456)")
+	flag.Parse()
+
+	if *resetPassword != "" {
+		gin.SetMode(gin.ReleaseMode)
+		db, err := database.Init(config.DatabaseFilePath())
+		if err != nil {
+			fmt.Printf("\033[31m%s [ERROR] Failed to init database: %v\033[0m\n",
+				time.Now().Format("2006-01-02 15:04:05"), err)
+			os.Exit(1)
+		}
+
+		authHandler := handler.NewAuthHandler(db)
+		if err := authHandler.ResetPasswordToDefault(*resetPassword); err != nil {
+			fmt.Printf("\033[31m%s [ERROR] Failed to reset password: %v\033[0m\n",
+				time.Now().Format("2006-01-02 15:04:05"), err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\033[32m%s [INFO] Password for user '%s' has been reset to: 123456\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), *resetPassword)
+		os.Exit(0)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 
 	// Ensure data directory exists (at root level)
@@ -107,6 +132,7 @@ func main() {
 
 	r.POST("/api/auth/login", authHandler.Login)
 	r.GET("/api/auth/me", middleware.AuthMiddleware(), authHandler.Me)
+	r.POST("/api/auth/change-password", middleware.AuthMiddleware(), authHandler.ChangePassword)
 
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware())

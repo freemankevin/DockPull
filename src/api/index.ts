@@ -28,6 +28,7 @@ api.interceptors.response.use(
 export const authApi = {
   login: (username: string, password: string) => axios.post('http://127.0.0.1:9238/api/auth/login', { username, password }),
   me: () => api.get('/auth/me'),
+  changePassword: (oldPassword: string, newPassword: string) => api.post('/auth/change-password', { old_password: oldPassword, new_password: newPassword }),
 }
 
 export const imagesApi = {

@@ -1,27 +1,88 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Save, FlaskConical, Folder,
-  Settings as SettingsIcon, Bell, RefreshCw, Cpu, Key, CheckCircle, AlertCircle, Loader2
+  Save, FlaskConical, Folder, Bell, RefreshCw, Cpu, Key, CheckCircle, AlertCircle, Loader2, User, ArrowRightFromLine, Plus, X, Eye, EyeOff
 } from 'lucide-react'
 import { useConfig } from '../hooks/useConfig'
 import { useToast } from '../context/ToastContext'
-import { webhookApi } from '../api'
+import { webhookApi, authApi } from '../api'
 import Select from '../components/Select'
 import DirectoryPicker from '../components/DirectoryPicker'
 
-type TabId = 'general' | 'retry' | 'webhook' | 'registry'
+type TabId = 'account' | 'export' | 'retry' | 'webhook' | 'tokens'
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: 'general', label: 'General',  icon: <SettingsIcon size={14} /> },
+  { id: 'account', label: 'Account',  icon: <User size={14} /> },
+  { id: 'export', label: 'Export',   icon: <ArrowRightFromLine size={14} /> },
   { id: 'retry',   label: 'Retry',    icon: <RefreshCw size={14} /> },
-  { id: 'registry', label: 'Registry', icon: <Key size={14} /> },
+  { id: 'tokens',  label: 'Tokens',   icon: <Key size={14} /> },
   { id: 'webhook', label: 'Webhook',  icon: <Bell size={14} /> },
 ]
 
+const TOKEN_REGISTRY_CONFIG = {
+  dockerhub: {
+    id: 'dockerhub',
+    name: 'Docker Hub',
+    hint: 'Username and access token for Docker Hub (hub.docker.com). Create token at Account Settings > Security.',
+    fields: [
+      { key: 'dockerhub_username', placeholder: 'Username', type: 'text' },
+      { key: 'dockerhub_token', placeholder: 'Access token', type: 'password' },
+    ],
+    checkKeys: ['dockerhub_username', 'dockerhub_token'],
+  },
+  ghcr: {
+    id: 'ghcr',
+    name: 'GitHub Container Registry (ghcr.io)',
+    hint: 'Personal access token with read:packages scope. Required even for public images.',
+    fields: [
+      { key: 'ghcr_token', placeholder: 'ghp_xxxxxxxxxxxx', type: 'password' },
+    ],
+    checkKeys: ['ghcr_token'],
+  },
+  quay: {
+    id: 'quay',
+    name: 'Quay.io',
+    hint: 'Access token for Quay.io registry. Create robot account or use OAuth token.',
+    fields: [
+      { key: 'quay_token', placeholder: 'Quay access token', type: 'password' },
+    ],
+    checkKeys: ['quay_token'],
+  },
+  acr: {
+    id: 'acr',
+    name: 'Alibaba Container Registry (acr)',
+    hint: 'Username and password for Alibaba Cloud Container Registry (cr.aliyun.com).',
+    fields: [
+      { key: 'acr_username', placeholder: 'Username', type: 'text' },
+      { key: 'acr_password', placeholder: 'Password', type: 'password' },
+    ],
+    checkKeys: ['acr_username', 'acr_password'],
+  },
+  ecr: {
+    id: 'ecr',
+    name: 'AWS ECR',
+    hint: 'AWS credentials for Elastic Container Registry. Region defaults to us-east-1.',
+    fields: [
+      { key: 'ecr_access_key_id', placeholder: 'Access Key ID', type: 'password' },
+      { key: 'ecr_secret_access_key', placeholder: 'Secret Access Key', type: 'password' },
+      { key: 'ecr_region', placeholder: 'Region (e.g., us-east-1)', type: 'text' },
+    ],
+    checkKeys: ['ecr_access_key_id', 'ecr_secret_access_key'],
+  },
+  gar: {
+    id: 'gar',
+    name: 'Google Artifact Registry (gar)',
+    hint: 'Service account JSON key or OAuth token for Google Artifact Registry.',
+    fields: [
+      { key: 'gar_token', placeholder: 'Google Cloud token or JSON key', type: 'password' },
+    ],
+    checkKeys: ['gar_token'],
+  },
+}
+
 function SettingRow({
-  label, hint, children, noBorder = false
+  label, hint, children, noBorder = true
 }: {
-  label: string; hint?: string; children: React.ReactNode; noBorder?: boolean
+  label: React.ReactNode; hint?: string; children: React.ReactNode; noBorder?: boolean
 }) {
   return (
     <div style={{
@@ -43,27 +104,94 @@ export default function Settings() {
   const { showToast } = useToast()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<any>({})
-  const [activeTab, setActiveTab] = useState<TabId>('general')
+  const [activeTab, setActiveTab] = useState<TabId>('account')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
+  const [showPasswords, setShowPasswords] = useState({ old: false, new: false, confirm: false })
+  const [visibleTokens, setVisibleTokens] = useState<string[]>([])
+  const [showAddToken, setShowAddToken] = useState(false)
 
   const getValue = (key: string) => formData[key] ?? config?.[key as keyof typeof config]
+
+  const hasTokenConfig = (tokenId: string) => {
+    const registry = TOKEN_REGISTRY_CONFIG[tokenId as keyof typeof TOKEN_REGISTRY_CONFIG]
+    if (!registry) return false
+    return registry.checkKeys.some(key => {
+      const value = getValue(key)
+      return value && value.trim() !== ''
+    })
+  }
+
+  const getAvailableTokens = () => {
+    return Object.keys(TOKEN_REGISTRY_CONFIG).filter(id => !visibleTokens.includes(id))
+  }
+
+  const addTokenRegistry = (tokenId: string) => {
+    if (!visibleTokens.includes(tokenId)) {
+      setVisibleTokens([...visibleTokens, tokenId])
+      setShowAddToken(false)
+    }
+  }
+
+  const removeTokenRegistry = (tokenId: string) => {
+    setVisibleTokens(visibleTokens.filter(id => id !== tokenId))
+    const registry = TOKEN_REGISTRY_CONFIG[tokenId as keyof typeof TOKEN_REGISTRY_CONFIG]
+    if (registry) {
+      registry.fields.forEach(field => {
+        if (formData[field.key]) {
+          const newFormData = { ...formData }
+          delete newFormData[field.key]
+          setFormData(newFormData)
+        }
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (config && visibleTokens.length === 0) {
+      const configuredTokens = Object.keys(TOKEN_REGISTRY_CONFIG).filter(id => hasTokenConfig(id))
+      setVisibleTokens(configuredTokens)
+    }
+  }, [config])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     setSaveStatus('saving')
     try {
+      if (activeTab === 'account' && passwordData.oldPassword && passwordData.newPassword) {
+        if (passwordData.newPassword.length < 6) {
+          showToast('error', 'New password must be at least 6 characters')
+          setSaveStatus('error')
+          setTimeout(() => setSaveStatus('idle'), 2000)
+          setSaving(false)
+          return
+        }
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+          showToast('error', 'New passwords do not match')
+          setSaveStatus('error')
+          setTimeout(() => setSaveStatus('idle'), 2000)
+          setSaving(false)
+          return
+        }
+        await authApi.changePassword(passwordData.oldPassword, passwordData.newPassword)
+        setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' })
+        showToast('success', 'Password changed successfully')
+      }
+      
       await updateConfig({ ...config, ...formData })
       setFormData({})
       setSaveStatus('success')
-      showToast('success', 'Settings saved successfully')
-      // Reset status after 2 seconds
+      if (activeTab !== 'account') {
+        showToast('success', 'Settings saved successfully')
+      }
       setTimeout(() => setSaveStatus('idle'), 2000)
-    } catch {
+    } catch (err: any) {
       setSaveStatus('error')
-      showToast('error', 'Failed to save settings')
+      const errorMsg = err.response?.data?.error || 'Failed to save settings'
+      showToast('error', errorMsg)
       setTimeout(() => setSaveStatus('idle'), 2000)
     } finally {
       setSaving(false)
@@ -117,13 +245,11 @@ export default function Settings() {
 
       <div style={{
         display: 'flex', background: 'var(--bg-primary)',
-        borderRadius: 'var(--radius-lg)', overflow: 'hidden',
-        border: '1px solid var(--border-color)',
+        overflow: 'visible',
       }}>
 
         <nav style={{
           width: '176px', flexShrink: 0,
-          borderRight: '1px solid var(--border-color)',
           padding: '8px',
         }}>
           <div style={{ padding: '8px 8px 10px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -152,11 +278,11 @@ export default function Settings() {
           ))}
         </nav>
 
-        <form onSubmit={handleSubmit} style={{ flex: 1, padding: '20px 24px' }}>
+        <form onSubmit={handleSubmit} style={{ flex: 1, padding: '20px 24px', overflow: 'visible' }}>
 
-          {activeTab === 'general' && <>
+          {activeTab === 'export' && <>
             <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>General</h2>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>Export Settings</h2>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Configure export path and pull behavior.</p>
             </div>
 
@@ -218,6 +344,73 @@ export default function Settings() {
             </div>
           </>}
 
+          {activeTab === 'account' && <>
+            <div style={{ marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>Account Settings</h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Change your login password.</p>
+            </div>
+
+            <SettingRow label="Old Password" hint="Enter your current password.">
+              <div className="password-input-wrapper">
+                <input 
+                  type={showPasswords.old ? 'text' : 'password'} 
+                  className="form-control"
+                  value={passwordData.oldPassword}
+                  onChange={e => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                  placeholder="Enter old password" />
+                <button 
+                  type="button" 
+                  className="password-toggle-btn" 
+                  onClick={() => setShowPasswords({ ...showPasswords, old: !showPasswords.old })}
+                  tabIndex={-1}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPasswords.old ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </SettingRow>
+
+            <SettingRow label="New Password" hint="New password must be at least 6 characters.">
+              <div className="password-input-wrapper">
+                <input 
+                  type={showPasswords.new ? 'text' : 'password'} 
+                  className="form-control"
+                  value={passwordData.newPassword}
+                  onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  placeholder="Enter new password" />
+                <button 
+                  type="button" 
+                  className="password-toggle-btn" 
+                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                  tabIndex={-1}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </SettingRow>
+
+            <SettingRow label="Confirm New Password" hint="Re-enter your new password to confirm." noBorder>
+              <div className="password-input-wrapper">
+                <input 
+                  type={showPasswords.confirm ? 'text' : 'password'} 
+                  className="form-control"
+                  value={passwordData.confirmPassword}
+                  onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  placeholder="Confirm new password" />
+                <button 
+                  type="button" 
+                  className="password-toggle-btn" 
+                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                  tabIndex={-1}
+                  aria-label="Toggle password visibility"
+                >
+                  {showPasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </SettingRow>
+          </>}
+
           {activeTab === 'retry' && <>
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>Retry Settings</h2>
@@ -239,18 +432,182 @@ export default function Settings() {
             </div>
           </>}
 
-          {activeTab === 'registry' && <>
+          {activeTab === 'tokens' && <>
             <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>Registry Credentials</h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Configure authentication for private or authenticated registries.</p>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>Access Tokens</h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>Configure tokens for registry authentication and private repositories.</p>
             </div>
 
-            <SettingRow label="GitHub Container Registry (ghcr.io)" hint="Personal access token with read:packages scope. Required even for public images on ghcr.io." noBorder>
-              <input type="password" className="form-control"
-                value={getValue('ghcr_token') || ''}
-                onChange={e => setFormData({ ...formData, ghcr_token: e.target.value })}
-                placeholder="ghp_xxxxxxxxxxxx" />
-            </SettingRow>
+            {visibleTokens.length === 0 && !showAddToken && (
+              <div style={{ 
+                padding: '20px', 
+                textAlign: 'center', 
+                color: 'var(--text-muted)',
+                background: 'var(--bg-tertiary)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-color)',
+              }}>
+                <Key size={24} style={{ marginBottom: '8px', opacity: 0.5 }} />
+                <p style={{ margin: 0, fontSize: '13px' }}>No registry tokens configured</p>
+                <button 
+                  onClick={() => setShowAddToken(true)}
+                  style={{
+                    marginTop: '12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Plus size={14} /> Add Registry Token
+                </button>
+              </div>
+            )}
+
+            {visibleTokens.map((tokenId, index) => {
+              const registry = TOKEN_REGISTRY_CONFIG[tokenId as keyof typeof TOKEN_REGISTRY_CONFIG]
+              if (!registry) return null
+              
+              return (
+                <SettingRow 
+                  key={tokenId}
+                  label={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{registry.name}</span>
+                      <button
+                        onClick={() => removeTokenRegistry(tokenId)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '2px',
+                          border: 'none',
+                          background: 'transparent',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                        }}
+                        title="Remove"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  }
+                  hint={registry.hint}
+                  noBorder={index === visibleTokens.length - 1 && !showAddToken}
+                >
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {registry.fields.map(field => (
+                      <input 
+                        key={field.key}
+                        type={field.type}
+                        className="form-control"
+                        value={getValue(field.key) || ''}
+                        onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
+                        placeholder={field.placeholder}
+                        style={{ flex: registry.fields.length > 1 ? 1 : undefined }}
+                      />
+                    ))}
+                  </div>
+                </SettingRow>
+              )
+            })}
+
+            {showAddToken && (
+              <div style={{ 
+                marginTop: visibleTokens.length > 0 ? '16px' : 0,
+                padding: '12px',
+                background: 'var(--bg-tertiary)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-color)',
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  marginBottom: '8px' 
+                }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Select a registry to add:
+                  </div>
+                  <button
+                    onClick={() => setShowAddToken(false)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '2px',
+                      border: 'none',
+                      background: 'transparent',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      borderRadius: '4px',
+                    }}
+                    title="Close"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {getAvailableTokens().map(tokenId => {
+                    const registry = TOKEN_REGISTRY_CONFIG[tokenId as keyof typeof TOKEN_REGISTRY_CONFIG]
+                    if (!registry) return null
+                    return (
+                      <button
+                        key={tokenId}
+                        onClick={() => addTokenRegistry(tokenId)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '8px 12px',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          background: 'var(--bg-secondary)',
+                          color: 'var(--text-primary)',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <Key size={14} style={{ color: 'var(--text-muted)' }} />
+                        {registry.name}
+                      </button>
+                    )
+                  })}
+                  {getAvailableTokens().length === 0 && (
+                    <div style={{ padding: '8px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      All registries are already configured
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {visibleTokens.length > 0 && !showAddToken && (
+              <button 
+                onClick={() => setShowAddToken(true)}
+                style={{
+                  marginTop: '16px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '6px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
+                <Plus size={14} /> Add Another Registry
+              </button>
+            )}
           </>}
 
           {activeTab === 'webhook' && <>
@@ -290,7 +647,13 @@ export default function Settings() {
                   options={[
                     { value: 'dingtalk', label: 'DingTalk' },
                     { value: 'feishu',   label: 'Lark (Feishu)' },
-                    { value: 'wechat',   label: 'WeChat Work' },
+                    { value: 'wechat',   label: 'WeChat' },
+                    { value: 'slack',    label: 'Slack' },
+                    { value: 'discord',  label: 'Discord' },
+                    { value: 'telegram', label: 'Telegram' },
+                    { value: 'teams',    label: 'Microsoft Teams' },
+                    { value: 'line',     label: 'LINE' },
+                    { value: 'custom',   label: 'Custom Webhook' },
                   ]} />
               </div>
             </SettingRow>
@@ -331,7 +694,7 @@ export default function Settings() {
                 onClick={handleTestWebhook}
                 disabled={!getValue('enable_webhook') || testStatus === 'testing'}
                 style={{
-                  minWidth: '120px',
+                  minWidth: '100px',
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -342,7 +705,7 @@ export default function Settings() {
                 ) : testStatus === 'error' ? (
                   <><AlertCircle size={13} /> Failed</>
                 ) : (
-                  <><FlaskConical size={13} /> Test Webhook</>
+                  <><FlaskConical size={13} /> Test</>
                 )}
               </button>
             )}
