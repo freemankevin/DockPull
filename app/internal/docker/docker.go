@@ -12,29 +12,39 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
 type DockerService struct {
-	cli *client.Client
-	cfg *config.Config
+	cli     *client.Client
+	cfg     *config.Config
+	cliOnce sync.Once
+	cliErr  error
 }
 
 func NewDockerService(cfg *config.Config) *DockerService {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create docker client: %v", err))
-	}
-
+	// Use lazy initialization - don't create client immediately
 	return &DockerService{
-		cli: cli,
 		cfg: cfg,
 	}
 }
 
+func (s *DockerService) getClient() (*client.Client, error) {
+	s.cliOnce.Do(func() {
+		s.cli, s.cliErr = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	})
+	return s.cli, s.cliErr
+}
+
 func (s *DockerService) PullImage(ctx context.Context, fullName, platform string) error {
+	cli, err := s.getClient()
+	if err != nil {
+		return err
+	}
+
 	options := types.ImagePullOptions{}
 	if platform != "" {
 		options.Platform = platform
@@ -50,7 +60,7 @@ func (s *DockerService) PullImage(ctx context.Context, fullName, platform string
 		options.RegistryAuth = base64.URLEncoding.EncodeToString(authJSON)
 	}
 
-	reader, err := s.cli.ImagePull(ctx, fullName, options)
+	reader, err := cli.ImagePull(ctx, fullName, options)
 	if err != nil {
 		return err
 	}
@@ -87,6 +97,11 @@ func extractImageName(imageName string) string {
 }
 
 func (s *DockerService) ExportImage(ctx context.Context, fullName, imageName, tag, platform string) (string, error) {
+	cli, err := s.getClient()
+	if err != nil {
+		return "", err
+	}
+
 	registry := detectRegistry(imageName)
 
 	platformClean := platform
@@ -113,7 +128,7 @@ func (s *DockerService) ExportImage(ctx context.Context, fullName, imageName, ta
 	}
 	defer file.Close()
 
-	reader, err := s.cli.ImageSave(ctx, []string{fullName})
+	reader, err := cli.ImageSave(ctx, []string{fullName})
 	if err != nil {
 		os.Remove(exportPath)
 		return "", err
@@ -130,7 +145,12 @@ func (s *DockerService) ExportImage(ctx context.Context, fullName, imageName, ta
 }
 
 func (s *DockerService) ImageExists(ctx context.Context, fullName string) (bool, error) {
-	images, err := s.cli.ImageList(ctx, types.ImageListOptions{})
+	cli, err := s.getClient()
+	if err != nil {
+		return false, err
+	}
+
+	images, err := cli.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
 		return false, err
 	}

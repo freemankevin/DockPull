@@ -4,15 +4,22 @@ import (
 	"database/sql"
 	"docker-pull-manager/internal/models"
 	"strings"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
 
 func Init(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", dbPath)
+	// Use optimized SQLite settings for faster startup
+	db, err := sql.Open("sqlite", dbPath+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
 	if err != nil {
 		return nil, err
 	}
+
+	// Optimize connection pool for single-user application
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(time.Hour)
 
 	if err := createTables(db); err != nil {
 		return nil, err
