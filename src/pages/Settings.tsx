@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import {
   Save, FlaskConical, Folder,
-  Settings as SettingsIcon, Bell, RefreshCw, Cpu, ChevronRight, X, Key
+  Settings as SettingsIcon, Bell, RefreshCw, Cpu, ChevronRight, X, Key, CheckCircle, AlertCircle, Loader2
 } from 'lucide-react'
 import { useConfig } from '../hooks/useConfig'
 import { useNotification } from '../context/NotificationContext'
+import { useToast } from '../context/ToastContext'
 import { webhookApi, browseApi } from '../api'
 import Select from '../components/Select'
 
@@ -40,6 +41,7 @@ function SettingRow({
 export default function Settings() {
   const { config, loading, updateConfig } = useConfig()
   const { addNotification } = useNotification()
+  const { showToast } = useToast()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<any>({})
   const [activeTab, setActiveTab] = useState<TabId>('general')
@@ -48,29 +50,42 @@ export default function Settings() {
   const [browseCurrent, setBrowseCurrent] = useState('')
   const [browseParent, setBrowseParent] = useState('')
   const [browseLoading, setBrowseLoading] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
 
   const getValue = (key: string) => formData[key] ?? config?.[key as keyof typeof config]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    setSaveStatus('saving')
     try {
       await updateConfig({ ...config, ...formData })
       setFormData({})
-      addNotification('success', 'Settings saved successfully')
+      setSaveStatus('success')
+      showToast('success', 'Settings saved successfully')
+      // Reset status after 2 seconds
+      setTimeout(() => setSaveStatus('idle'), 2000)
     } catch {
-      addNotification('error', 'Failed to save settings')
+      setSaveStatus('error')
+      showToast('error', 'Failed to save settings')
+      setTimeout(() => setSaveStatus('idle'), 2000)
     } finally {
       setSaving(false)
     }
   }
 
   const handleTestWebhook = async () => {
+    setTestStatus('testing')
     try {
       await webhookApi.test()
-      addNotification('success', 'Test webhook sent successfully')
+      setTestStatus('success')
+      showToast('success', 'Test webhook sent successfully')
+      setTimeout(() => setTestStatus('idle'), 2000)
     } catch (err: any) {
-      addNotification('error', 'Failed to send webhook: ' + err.message)
+      setTestStatus('error')
+      showToast('error', 'Failed to send webhook: ' + err.message)
+      setTimeout(() => setTestStatus('idle'), 2000)
     }
   }
 
@@ -393,16 +408,45 @@ export default function Settings() {
           </>}
 
           <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              <Save size={13} />
-              {saving ? 'Saving...' : 'Save'}
+            <button
+              type="submit"
+              className={`btn ${saveStatus === 'success' ? 'btn-success' : saveStatus === 'error' ? 'btn-danger' : 'btn-primary'}`}
+              disabled={saving}
+              style={{
+                minWidth: '100px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {saveStatus === 'saving' ? (
+                <><Loader2 size={13} className="spin" /> Saving...</>
+              ) : saveStatus === 'success' ? (
+                <><CheckCircle size={13} /> Saved</>
+              ) : saveStatus === 'error' ? (
+                <><AlertCircle size={13} /> Failed</>
+              ) : (
+                <><Save size={13} /> Save</>
+              )}
             </button>
             {activeTab === 'webhook' && (
-              <button type="button" className="btn btn-secondary"
+              <button
+                type="button"
+                className={`btn ${testStatus === 'success' ? 'btn-success' : testStatus === 'error' ? 'btn-danger' : 'btn-secondary'}`}
                 onClick={handleTestWebhook}
-                disabled={!getValue('enable_webhook')}>
-                <FlaskConical size={13} />
-                Test Webhook
+                disabled={!getValue('enable_webhook') || testStatus === 'testing'}
+                style={{
+                  minWidth: '120px',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {testStatus === 'testing' ? (
+                  <><Loader2 size={13} className="spin" /> Testing...</>
+                ) : testStatus === 'success' ? (
+                  <><CheckCircle size={13} /> Sent</>
+                ) : testStatus === 'error' ? (
+                  <><AlertCircle size={13} /> Failed</>
+                ) : (
+                  <><FlaskConical size={13} /> Test Webhook</>
+                )}
               </button>
             )}
           </div>

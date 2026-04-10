@@ -61,6 +61,7 @@ function RegistryIcon({ registry }: { registry: string }) {
 import { useImages } from '../hooks/useImages'
 import { useConfig } from '../hooks/useConfig'
 import { useNotification } from '../context/NotificationContext'
+import { useToast } from '../context/ToastContext'
 import { imagesApi } from '../api'
 import type { Image } from '../types'
 
@@ -196,6 +197,7 @@ function StatusBadge({ status }: { status: Image['status'] }) {
 
 export default function Images() {
   const { addNotification } = useNotification()
+  const { showToast } = useToast()
   const { images, createImage, deleteImage, pullImage, exportImage } = useImages(addNotification)
   const { config } = useConfig()
   const [showModal, setShowModal] = useState(false)
@@ -240,7 +242,10 @@ export default function Images() {
     setIsSubmitting(true)
 
     try {
-      let platformsToPull = formData.platforms
+      // Ensure platforms is never empty - use default if needed
+      let platformsToPull = formData.platforms.length > 0 
+        ? formData.platforms 
+        : ['linux/amd64', 'linux/arm64']
 
       const firstImage = batchMode ? batchText.split('\n')[0].trim() : formData.fullName
       if (firstImage && platformsToPull.includes('linux/arm64')) {
@@ -249,16 +254,21 @@ export default function Images() {
           const checkRes = await imagesApi.checkPlatforms(name, tag)
           const supportedPlatforms = checkRes.data.platforms || []
           if (!supportedPlatforms.includes('linux/arm64')) {
-            addNotification('error', 'Image does not support linux/arm64, pulling linux/amd64 only')
+            showToast('info', 'Image does not support linux/arm64, pulling linux/amd64 only')
             platformsToPull = platformsToPull.filter(p => p !== 'linux/arm64')
           }
         } catch {
-          addNotification('info', 'Unable to verify image architecture, continuing with selected platforms')
+          showToast('info', 'Unable to verify image architecture, continuing with selected platforms')
         }
       }
 
       let addedCount = 0
       let duplicateCount = 0
+      
+      // Double check we have at least one platform
+      if (platformsToPull.length === 0) {
+        platformsToPull = ['linux/amd64']
+      }
 
       if (batchMode) {
         const lines = batchText.split('\n').filter(line => line.trim())
@@ -274,9 +284,9 @@ export default function Images() {
           }
         }
         if (duplicateCount > 0) {
-          addNotification('warning', `${duplicateCount} task(s) skipped (already exists), ${addedCount} task(s) added`)
+          showToast('warning', `${duplicateCount} task(s) skipped (already exists), ${addedCount} task(s) added`)
         } else {
-          addNotification('success', `Added ${addedCount} image task(s)`)
+          showToast('success', `Added ${addedCount} image task(s)`)
         }
       } else {
         const { name, tag } = parseImageName(formData.fullName)
@@ -289,9 +299,9 @@ export default function Images() {
           }
         }
         if (duplicateCount > 0) {
-          addNotification('warning', `${duplicateCount} task(s) skipped (already exists), ${addedCount} task(s) added`)
+          showToast('warning', `${duplicateCount} task(s) skipped (already exists), ${addedCount} task(s) added`)
         } else {
-          addNotification('success', `Added ${addedCount} image task(s)`)
+          showToast('success', `Added ${addedCount} image task(s)`)
         }
       }
 

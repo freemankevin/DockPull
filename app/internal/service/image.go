@@ -11,19 +11,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type ImageService struct {
-	db     *sql.DB
-	docker *docker.DockerService
-	cfg    *config.Config
+	db      *sql.DB
+	docker  *docker.DockerService
+	cfg     *config.Config
+	webhook *WebhookService
 }
 
-func NewImageService(db *sql.DB, dockerSvc *docker.DockerService, cfg *config.Config) *ImageService {
+func NewImageService(db *sql.DB, dockerSvc *docker.DockerService, cfg *config.Config, webhookSvc *WebhookService) *ImageService {
 	return &ImageService{
-		db:     db,
-		docker: dockerSvc,
-		cfg:    cfg,
+		db:      db,
+		docker:  dockerSvc,
+		cfg:     cfg,
+		webhook: webhookSvc,
 	}
 }
 
@@ -37,7 +40,14 @@ func (s *ImageService) CreateImage(req *models.CreateImageRequest) (*models.Imag
 		tag = "latest"
 	}
 	if platform == "" {
-		platform = s.cfg.DefaultPlatform
+		// Use first platform from DefaultPlatform if it's comma-separated
+		if s.cfg.DefaultPlatform != "" {
+			platforms := strings.Split(s.cfg.DefaultPlatform, ",")
+			platform = strings.TrimSpace(platforms[0])
+		}
+		if platform == "" {
+			platform = "linux/amd64"
+		}
 	}
 
 	// Check for duplicates: same name + tag + platform with pending/pulling status
@@ -96,11 +106,20 @@ func (s *ImageService) processImage(img *models.Image) {
 			database.UpdateImageStatus(s.db, img.ID, "failed", "Max retry attempts reached")
 			s.logAction(img.ID, "PULL_FAILED", fmt.Sprintf("Pull failed permanently: %v", err))
 		}
+		// Send webhook notification for pull failure
+		if s.webhook != nil {
+			s.webhook.SendNotification("Docker Pull Manager", fmt.Sprintf("❌ Pull failed: %s (%s) - %v", img.FullName, img.Platform, err))
+		}
 		return
 	}
 
 	database.UpdateImageStatus(s.db, img.ID, "success", "")
 	s.logAction(img.ID, "PULL_SUCCESS", fmt.Sprintf("Successfully pulled %s", img.FullName))
+
+	// Send webhook notification for successful pull
+	if s.webhook != nil {
+		s.webhook.SendNotification("Docker Pull Manager", fmt.Sprintf("✅ Pull succeeded: %s (%s)", img.FullName, img.Platform))
+	}
 
 	if img.IsAutoExport {
 		s.ExportImage(img.ID)
@@ -119,11 +138,20 @@ func (s *ImageService) ExportImage(imageID int64) (string, error) {
 	exportPath, err := s.docker.ExportImage(ctx, img.FullName, img.Name, img.Tag, img.Platform)
 	if err != nil {
 		s.logAction(imageID, "EXPORT_FAILED", fmt.Sprintf("Export failed: %v", err))
+		// Send webhook notification for export failure
+		if s.webhook != nil {
+			s.webhook.SendNotification("Docker Pull Manager", fmt.Sprintf("❌ Export failed: %s (%s) - %v", img.FullName, img.Platform, err))
+		}
 		return "", err
 	}
 
 	database.UpdateImageExport(s.db, imageID, exportPath)
 	s.logAction(imageID, "EXPORT_SUCCESS", fmt.Sprintf("Exported to %s", exportPath))
+
+	// Send webhook notification for successful export
+	if s.webhook != nil {
+		s.webhook.SendNotification("Docker Pull Manager", fmt.Sprintf("📦 Export succeeded: %s (%s) -> %s", img.FullName, img.Platform, exportPath))
+	}
 
 	return exportPath, nil
 }

@@ -2,9 +2,21 @@
 
 set -e
 
+# Set default port if not provided
+PORT=${PORT:-9238}
+
 clear
 
 echo "🚀 启动后端服务..."
+
+# Get script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
+echo "📂 工作目录: $(pwd)"
 
 echo "🔍 检查端口 $PORT 是否被占用..."
 if netstat -ano 2>/dev/null | grep ":$PORT " | grep -q "LISTENING"; then
@@ -29,13 +41,12 @@ echo "✅ 端口 $PORT 可用"
 
 echo "📦 检查依赖..."
 
-if [ ! -d "vendor" ] && [ ! -f "go.sum" ]; then
+if [ ! -d "app/vendor" ] && [ ! -f "app/go.sum" ]; then
     echo "📥 下载 Go 依赖..."
-    go mod download
-    go mod tidy
+    cd app && go mod download && go mod tidy && cd ..
 else
     echo "✅ 依赖已下载"
 fi
 
 echo "🔧 启动后端服务 (端口: $PORT)..."
-go run cmd/server/main.go
+cd app && go run cmd/server/main.go

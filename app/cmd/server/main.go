@@ -8,6 +8,7 @@ import (
 	"docker-pull-manager/internal/middleware"
 	"docker-pull-manager/internal/service"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,14 +18,49 @@ import (
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 
-	cfg := config.Load()
+	// Ensure data directory exists (at root level)
+	dataDir := config.GetDataDir()
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		fmt.Printf("\033[31m%s [ERROR] Failed to create data directory: %v\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), err)
+		return
+	}
 
-	db, err := database.Init(cfg.DatabasePath)
+	// Initialize database
+	db, err := database.Init(config.DatabaseFilePath())
 	if err != nil {
 		fmt.Printf("\033[31m%s [ERROR] Failed to init database: %v\033[0m\n",
 			time.Now().Format("2006-01-02 15:04:05"), err)
 		return
 	}
+
+	// Load settings from database
+	settings, err := database.GetSettings(db)
+	if err != nil {
+		fmt.Printf("\033[31m%s [ERROR] Failed to load settings: %v\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), err)
+		return
+	}
+
+	// Ensure exports directory exists (use root exports dir)
+	exportsDir := config.GetExportsDir()
+	if settings.ExportPath == "" {
+		// First run: update database with correct exports path
+		settings.ExportPath = exportsDir
+		db.Exec(`UPDATE settings SET export_path = ? WHERE id = 1`, exportsDir)
+	} else if settings.ExportPath == "./exports" || settings.ExportPath == ".\\exports" {
+		// Migrate old relative path to absolute root path
+		settings.ExportPath = exportsDir
+		db.Exec(`UPDATE settings SET export_path = ? WHERE id = 1`, exportsDir)
+	}
+	if err := os.MkdirAll(exportsDir, 0755); err != nil {
+		fmt.Printf("\033[31m%s [ERROR] Failed to create exports directory: %v\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), err)
+		return
+	}
+
+	// Create config from settings
+	cfg := config.FromSettings(settings)
 
 	authHandler := handler.NewAuthHandler(db)
 	if err := authHandler.InitDefaultUser(); err != nil {
@@ -33,8 +69,8 @@ func main() {
 	}
 
 	dockerService := docker.NewDockerService(cfg)
-	imageService := service.NewImageService(db, dockerService, cfg)
 	webhookService := service.NewWebhookService(cfg)
+	imageService := service.NewImageService(db, dockerService, cfg, webhookService)
 
 	c := cron.New()
 	c.AddFunc("@every 1m", func() {
@@ -75,7 +111,7 @@ func main() {
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware())
 	{
-		h := handler.NewHandler(imageService, dockerService, webhookService, cfg)
+		h := handler.NewHandler(imageService, dockerService, webhookService, cfg, db)
 		api.GET("/images", h.ListImages)
 		api.POST("/images", h.CreateImage)
 		api.PUT("/images/:id", h.UpdateImage)

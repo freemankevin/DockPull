@@ -1,11 +1,28 @@
 package config
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
+
+	"docker-pull-manager/internal/models"
 )
 
+// getProjectRoot returns the project root directory
+func getProjectRoot() string {
+	// Get the directory of the current file
+	_, filename, _, _ := runtime.Caller(0)
+	// This file is in internal/config/, so go up 3 levels to get project root
+	dir := filepath.Dir(filename)
+	for i := 0; i < 3; i++ {
+		dir = filepath.Dir(dir)
+	}
+	return dir
+}
+
+// Config holds application configuration
+// Most settings are now stored in database, except DatabasePath
+// which is needed to connect to the database
 type Config struct {
 	DatabasePath     string `json:"database_path"`
 	ExportPath       string `json:"export_path"`
@@ -13,51 +30,67 @@ type Config struct {
 	RetryIntervalSec int    `json:"retry_interval_sec"`
 	EnableWebhook    bool   `json:"enable_webhook"`
 	WebhookURL       string `json:"webhook_url"`
-	WebhookType      string `json:"webhook_type"` // dingtalk, feishu, wechat
+	WebhookType      string `json:"webhook_type"`
 	ConcurrentPulls  int    `json:"concurrent_pulls"`
 	DefaultPlatform  string `json:"default_platform"`
-	GzipCompression  int    `json:"gzip_compression"` // 1-9
-	GhcrToken        string `json:"ghcr_token"`       // GitHub Container Registry token
+	GzipCompression  int    `json:"gzip_compression"`
+	GhcrToken        string `json:"ghcr_token"`
 }
 
+// DatabaseFilePath returns the path to the SQLite database file
+// This is hardcoded and cannot be changed via settings
+func DatabaseFilePath() string {
+	return filepath.Join(getProjectRoot(), "data", "app.db")
+}
+
+// Load returns the database path
+// Note: Other settings should be loaded from database using database.GetSettings()
 func Load() *Config {
-	cfg := &Config{
-		DatabasePath:     "./data/app.db",
-		ExportPath:       "./exports",
-		RetryMaxAttempts: 0, // 0 means unlimited
-		RetryIntervalSec: 30,
-		EnableWebhook:    false,
-		WebhookType:      "dingtalk",
-		ConcurrentPulls:  3,
-		DefaultPlatform:  "linux/amd64,linux/arm64",
-		GzipCompression:  9,
+	// Database path is always fixed at root level
+	return &Config{
+		DatabasePath: DatabaseFilePath(),
 	}
-
-	configDir := "./config"
-	configFile := filepath.Join(configDir, "config.json")
-
-	if data, err := os.ReadFile(configFile); err == nil {
-		json.Unmarshal(data, cfg)
-	}
-
-	os.MkdirAll(filepath.Dir(cfg.DatabasePath), 0755)
-	os.MkdirAll(cfg.ExportPath, 0755)
-
-	return cfg
 }
 
-func (c *Config) Save() error {
-	configDir := "./config"
-	configFile := filepath.Join(configDir, "config.json")
+// FromSettings creates a Config from database settings
+func FromSettings(s *models.Settings) *Config {
+	return &Config{
+		DatabasePath:     DatabaseFilePath(),
+		ExportPath:       s.ExportPath,
+		RetryMaxAttempts: s.RetryMaxAttempts,
+		RetryIntervalSec: s.RetryIntervalSec,
+		EnableWebhook:    s.EnableWebhook,
+		WebhookURL:       s.WebhookURL,
+		WebhookType:      s.WebhookType,
+		ConcurrentPulls:  s.ConcurrentPulls,
+		DefaultPlatform:  s.DefaultPlatform,
+		GzipCompression:  s.GzipCompression,
+		GhcrToken:        s.GhcrToken,
+	}
+}
 
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+// GetDataDir returns the data directory path
+func GetDataDir() string {
+	return filepath.Join(getProjectRoot(), "data")
+}
+
+// GetExportsDir returns the exports directory path
+func GetExportsDir() string {
+	return filepath.Join(getProjectRoot(), "exports")
+}
+
+// EnsureDirs creates necessary directories
+func EnsureDirs() error {
+	// Data directory (contains database)
+	if err := createDirIfNotExists(GetDataDir()); err != nil {
 		return err
 	}
+	return nil
+}
 
-	data, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return err
+func createDirIfNotExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return os.MkdirAll(path, 0755)
 	}
-
-	return os.WriteFile(configFile, data, 0644)
+	return nil
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"docker-pull-manager/internal/config"
+	"docker-pull-manager/internal/database"
 	"docker-pull-manager/internal/docker"
 	"docker-pull-manager/internal/models"
 	"docker-pull-manager/internal/service"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"database/sql"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,14 +21,16 @@ type Handler struct {
 	dockerService  *docker.DockerService
 	webhookService *service.WebhookService
 	cfg            *config.Config
+	db             *sql.DB
 }
 
-func NewHandler(imageService *service.ImageService, dockerService *docker.DockerService, webhookService *service.WebhookService, cfg *config.Config) *Handler {
+func NewHandler(imageService *service.ImageService, dockerService *docker.DockerService, webhookService *service.WebhookService, cfg *config.Config, db *sql.DB) *Handler {
 	return &Handler{
 		imageService:   imageService,
 		dockerService:  dockerService,
 		webhookService: webhookService,
 		cfg:            cfg,
+		db:             db,
 	}
 }
 
@@ -142,7 +146,19 @@ func (h *Handler) ExportImage(c *gin.Context) {
 }
 
 func (h *Handler) GetConfig(c *gin.Context) {
-	c.JSON(http.StatusOK, h.cfg)
+	// Return config without database_path for security
+	c.JSON(http.StatusOK, gin.H{
+		"export_path":        h.cfg.ExportPath,
+		"retry_max_attempts": h.cfg.RetryMaxAttempts,
+		"retry_interval_sec": h.cfg.RetryIntervalSec,
+		"enable_webhook":     h.cfg.EnableWebhook,
+		"webhook_url":        h.cfg.WebhookURL,
+		"webhook_type":       h.cfg.WebhookType,
+		"concurrent_pulls":   h.cfg.ConcurrentPulls,
+		"default_platform":   h.cfg.DefaultPlatform,
+		"gzip_compression":   h.cfg.GzipCompression,
+		"ghcr_token":         h.cfg.GhcrToken,
+	})
 }
 
 func (h *Handler) UpdateConfig(c *gin.Context) {
@@ -152,6 +168,7 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 		return
 	}
 
+	// Update local config
 	if req.ExportPath != "" {
 		h.cfg.ExportPath = req.ExportPath
 	}
@@ -179,12 +196,38 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 	}
 	h.cfg.GhcrToken = req.GhcrToken
 
-	if err := h.cfg.Save(); err != nil {
+	// Save to database
+	settings := &models.Settings{
+		ExportPath:       h.cfg.ExportPath,
+		RetryMaxAttempts: h.cfg.RetryMaxAttempts,
+		RetryIntervalSec: h.cfg.RetryIntervalSec,
+		EnableWebhook:    h.cfg.EnableWebhook,
+		WebhookURL:       h.cfg.WebhookURL,
+		WebhookType:      h.cfg.WebhookType,
+		ConcurrentPulls:  h.cfg.ConcurrentPulls,
+		DefaultPlatform:  h.cfg.DefaultPlatform,
+		GzipCompression:  h.cfg.GzipCompression,
+		GhcrToken:        h.cfg.GhcrToken,
+	}
+
+	if err := database.UpdateSettings(h.db, settings); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, h.cfg)
+	// Return updated config (without database_path)
+	c.JSON(http.StatusOK, gin.H{
+		"export_path":        h.cfg.ExportPath,
+		"retry_max_attempts": h.cfg.RetryMaxAttempts,
+		"retry_interval_sec": h.cfg.RetryIntervalSec,
+		"enable_webhook":     h.cfg.EnableWebhook,
+		"webhook_url":        h.cfg.WebhookURL,
+		"webhook_type":       h.cfg.WebhookType,
+		"concurrent_pulls":   h.cfg.ConcurrentPulls,
+		"default_platform":   h.cfg.DefaultPlatform,
+		"gzip_compression":   h.cfg.GzipCompression,
+		"ghcr_token":         h.cfg.GhcrToken,
+	})
 }
 
 func (h *Handler) TestWebhook(c *gin.Context) {

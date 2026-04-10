@@ -51,6 +51,20 @@ func createTables(db *sql.DB) error {
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE
 		)`,
+		`CREATE TABLE IF NOT EXISTS settings (
+			id INTEGER PRIMARY KEY CHECK (id = 1),
+			export_path TEXT,
+			retry_max_attempts INTEGER DEFAULT 0,
+			retry_interval_sec INTEGER DEFAULT 30,
+			enable_webhook BOOLEAN DEFAULT 0,
+			webhook_url TEXT DEFAULT '',
+			webhook_type TEXT DEFAULT 'dingtalk',
+			concurrent_pulls INTEGER DEFAULT 3,
+			default_platform TEXT DEFAULT 'linux/amd64,linux/arm64',
+			gzip_compression INTEGER DEFAULT 9,
+			ghcr_token TEXT DEFAULT '',
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE INDEX IF NOT EXISTS idx_images_status ON images(status)`,
 		`CREATE INDEX IF NOT EXISTS idx_images_full_name ON images(full_name)`,
 		`CREATE INDEX IF NOT EXISTS idx_logs_image_id ON image_logs(image_id)`,
@@ -61,6 +75,9 @@ func createTables(db *sql.DB) error {
 			return err
 		}
 	}
+
+	// Insert default settings if not exists
+	_, _ = db.Exec(`INSERT OR IGNORE INTO settings (id) VALUES (1)`)
 
 	return nil
 }
@@ -222,10 +239,31 @@ func GetPendingImages(db *sql.DB) ([]models.Image, error) {
 }
 
 // GetImageByNameTagPlatform checks if an image with the same name, tag and platform exists
-// with status 'pending' or 'pulling' (active status)
+// Returns the image if found regardless of status
 func GetImageByNameTagPlatform(db *sql.DB, name, tag, platform string) (*models.Image, error) {
-	query := `SELECT id, name, tag, full_name, platform, status, retry_count, 
-			  error_message, export_path, exported_at, created_at, updated_at, is_auto_export 
+	query := `SELECT id, name, tag, full_name, platform, status, retry_count,
+			  error_message, export_path, exported_at, created_at, updated_at, is_auto_export
+			  FROM images WHERE name = ? AND tag = ? AND platform = ?`
+
+	var img models.Image
+	err := db.QueryRow(query, name, tag, platform).Scan(&img.ID, &img.Name, &img.Tag, &img.FullName,
+		&img.Platform, &img.Status, &img.RetryCount, &img.ErrorMessage, &img.ExportPath,
+		&img.ExportedAt, &img.CreatedAt, &img.UpdatedAt, &img.IsAutoExport)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &img, nil
+}
+
+// GetActiveImageByNameTagPlatform checks if an image with the same name, tag and platform exists
+// with status 'pending' or 'pulling' (active status)
+func GetActiveImageByNameTagPlatform(db *sql.DB, name, tag, platform string) (*models.Image, error) {
+	query := `SELECT id, name, tag, full_name, platform, status, retry_count,
+			  error_message, export_path, exported_at, created_at, updated_at, is_auto_export
 			  FROM images WHERE name = ? AND tag = ? AND platform = ? AND status IN ('pending', 'pulling')`
 
 	var img models.Image
@@ -240,4 +278,62 @@ func GetImageByNameTagPlatform(db *sql.DB, name, tag, platform string) (*models.
 	}
 
 	return &img, nil
+}
+
+// GetSettings retrieves all settings from database
+func GetSettings(db *sql.DB) (*models.Settings, error) {
+	query := `SELECT export_path, retry_max_attempts, retry_interval_sec, enable_webhook,
+			  webhook_url, webhook_type, concurrent_pulls, default_platform, gzip_compression, ghcr_token
+			  FROM settings WHERE id = 1`
+
+	var s models.Settings
+	err := db.QueryRow(query).Scan(
+		&s.ExportPath, &s.RetryMaxAttempts, &s.RetryIntervalSec, &s.EnableWebhook,
+		&s.WebhookURL, &s.WebhookType, &s.ConcurrentPulls, &s.DefaultPlatform,
+		&s.GzipCompression, &s.GhcrToken,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Return default settings
+			return &models.Settings{
+				ExportPath:       "./exports",
+				RetryMaxAttempts: 0,
+				RetryIntervalSec: 30,
+				EnableWebhook:    false,
+				WebhookURL:       "",
+				WebhookType:      "dingtalk",
+				ConcurrentPulls:  3,
+				DefaultPlatform:  "linux/amd64,linux/arm64",
+				GzipCompression:  9,
+				GhcrToken:        "",
+			}, nil
+		}
+		return nil, err
+	}
+
+	return &s, nil
+}
+
+// UpdateSettings updates settings in database
+func UpdateSettings(db *sql.DB, s *models.Settings) error {
+	query := `UPDATE settings SET
+			  export_path = ?,
+			  retry_max_attempts = ?,
+			  retry_interval_sec = ?,
+			  enable_webhook = ?,
+			  webhook_url = ?,
+			  webhook_type = ?,
+			  concurrent_pulls = ?,
+			  default_platform = ?,
+			  gzip_compression = ?,
+			  ghcr_token = ?,
+			  updated_at = CURRENT_TIMESTAMP
+			  WHERE id = 1`
+
+	_, err := db.Exec(query,
+		s.ExportPath, s.RetryMaxAttempts, s.RetryIntervalSec, s.EnableWebhook,
+		s.WebhookURL, s.WebhookType, s.ConcurrentPulls, s.DefaultPlatform,
+		s.GzipCompression, s.GhcrToken,
+	)
+	return err
 }

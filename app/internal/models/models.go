@@ -64,6 +64,20 @@ type UpdateConfigRequest struct {
 	GhcrToken        string `json:"ghcr_token"`
 }
 
+// Settings represents application settings stored in database
+type Settings struct {
+	ExportPath       string `json:"export_path" db:"export_path"`
+	RetryMaxAttempts int    `json:"retry_max_attempts" db:"retry_max_attempts"`
+	RetryIntervalSec int    `json:"retry_interval_sec" db:"retry_interval_sec"`
+	EnableWebhook    bool   `json:"enable_webhook" db:"enable_webhook"`
+	WebhookURL       string `json:"webhook_url" db:"webhook_url"`
+	WebhookType      string `json:"webhook_type" db:"webhook_type"`
+	ConcurrentPulls  int    `json:"concurrent_pulls" db:"concurrent_pulls"`
+	DefaultPlatform  string `json:"default_platform" db:"default_platform"`
+	GzipCompression  int    `json:"gzip_compression" db:"gzip_compression"`
+	GhcrToken        string `json:"ghcr_token" db:"ghcr_token"`
+}
+
 type LoginRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`

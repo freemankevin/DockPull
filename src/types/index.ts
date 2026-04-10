@@ -23,7 +23,6 @@ export interface ImageLog {
 }
 
 export interface Config {
-  database_path: string
   export_path: string
   retry_max_attempts: number
   retry_interval_sec: number
@@ -33,6 +32,7 @@ export interface Config {
   concurrent_pulls: number
   default_platform: string
   gzip_compression: number
+  ghcr_token: string
 }
 
 export interface CreateImageRequest {

@@ -145,11 +145,10 @@ server
 # Kilo CLI local config
 .kilo/
 
-# App specific
-app/data/*.db
-app/exports/
+# App specific - data and exports moved to root
+data/
+exports/
 app/server.exe
-app/config/
 
 # Windows temp files
 nul

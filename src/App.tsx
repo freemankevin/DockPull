@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { NotificationBell } from './context/NotificationBell'
+import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { UserMenu } from './context/UserMenu'
 import './App.css'
@@ -105,17 +106,21 @@ function AppContent() {
   if (!isAuthenticated) {
     return (
       <ThemeProvider>
-        <NotificationProvider>
-          <Login />
-        </NotificationProvider>
+        <ToastProvider>
+          <NotificationProvider>
+            <Login />
+          </NotificationProvider>
+        </ToastProvider>
       </ThemeProvider>
     )
   }
 
   return (
-    <NotificationProvider>
-      <MainApp />
-    </NotificationProvider>
+    <ToastProvider>
+      <NotificationProvider>
+        <MainApp />
+      </NotificationProvider>
+    </ToastProvider>
   )
 }
 
