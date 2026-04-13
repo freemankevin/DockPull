@@ -1,280 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, FileText, ChevronDown, ChevronUp, Copy, CheckCircle, Plus, AlertCircle, Clock, ArrowRightLeft, Download, ArrowRightFromLine } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 import { imagesApi } from '../api'
 import { useImages } from '../hooks/useImages'
 import type { Image, ImageLog } from '../types'
-
-const ACTION_META: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
-  CREATE:         { label: 'Created',        color: 'var(--blue-500)',   bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.2)',  icon: <Plus size={11} /> },
-  UPDATE:         { label: 'Updated',        color: 'var(--yellow-500)', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.2)',  icon: <Clock size={11} /> },
-  PULL_START:     { label: 'Pulling',        color: 'var(--purple-500)', bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.2)',  icon: <Download size={11} /> },
-  PULL_SUCCESS:   { label: 'Success',        color: 'var(--green-500)',  bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.2)',   icon: <CheckCircle size={11} /> },
-  PULL_FAILED:    { label: 'Failed',         color: 'var(--red-500)',    bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.2)',   icon: <AlertCircle size={11} /> },
-  EXPORT_START:   { label: 'Exporting',      color: 'var(--purple-500)', bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.2)',  icon: <ArrowRightFromLine size={11} /> },
-  EXPORT_SUCCESS: { label: 'Exported',       color: 'var(--green-500)',  bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.2)',   icon: <CheckCircle size={11} /> },
-  EXPORT_FAILED:  { label: 'Failed',         color: 'var(--red-500)',    bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.2)',   icon: <AlertCircle size={11} /> },
-  PLATFORM_CHANGED: { label: 'Changed',     color: 'var(--yellow-500)', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.2)',  icon: <ArrowRightLeft size={11} /> },
-}
-
-const PAGE_SIZE = 20
-
-const ALL_ACTIONS = [
-  { value: 'all', label: 'All Actions' },
-  ...Object.entries(ACTION_META).map(([value, { label }]) => ({ value, label }))
-]
-
-function ActionBadge({ action }: { action: string }) {
-  const meta = ACTION_META[action] || { 
-    label: action, 
-    color: 'var(--text-secondary)', 
-    bg: 'var(--bg-tertiary)', 
-    border: 'var(--border-color)',
-    icon: null 
-  }
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '5px',
-      padding: '3px 10px', borderRadius: '20px',
-      fontSize: '12px', fontWeight: 500,
-      color: meta.color, background: meta.bg,
-      border: `1px solid ${meta.border}`,
-      whiteSpace: 'nowrap', flexShrink: 0,
-      lineHeight: 1.5,
-    }}>
-      {meta.icon}
-      {meta.label}
-    </span>
-  )
-}
-
-function FilterChip({
-  label, value, options, onChange
-}: {
-  label: string
-  value: string
-  options: { value: string; label: string }[]
-  onChange: (v: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const selected = options.find(o => o.value === value)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
-
-  return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '5px 12px', height: '32px',
-          border: value !== 'all' ? '1px solid var(--purple-600)' : '1px solid var(--border-color)',
-          borderRadius: '6px', cursor: 'pointer',
-          background: value !== 'all' ? 'var(--accent-bg)' : 'var(--bg-tertiary)',
-          color: value !== 'all' ? 'var(--purple-400)' : 'var(--text-secondary)',
-          fontSize: '13px', fontWeight: 400,
-          whiteSpace: 'nowrap', transition: 'all .12s',
-        }}
-      >
-        {value === 'all' ? label : selected?.label}
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style={{ opacity: .5, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .12s' }}>
-          <path d="M5 7L1 3h8z"/>
-        </svg>
-      </button>
-      {open && (
-        <div
-          style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 0,
-            minWidth: '200px', background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-color)', borderRadius: '8px',
-            boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden',
-            animation: 'fadeIn .12s ease',
-          }}
-        >
-          {options.map(opt => (
-            <div
-              key={opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false) }}
-              style={{
-                padding: '8px 12px', fontSize: '13px', cursor: 'pointer',
-                color: opt.value === value ? 'var(--purple-400)' : 'var(--text-primary)',
-                background: opt.value === value ? 'var(--accent-bg)' : 'transparent',
-                transition: 'background .1s',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-              onMouseEnter={e => { if (opt.value !== value) (e.currentTarget as HTMLElement).style.background = 'var(--bg-tertiary)' }}
-              onMouseLeave={e => { if (opt.value !== value) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-            >
-              {opt.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ExpandableText({ 
-  text, 
-  expandKey, 
-  expandedLogs, 
-  setExpandedLogs,
-  fontSize = '13px',
-  fontFamily = 'inherit',
-  color = 'var(--text-secondary)',
-  showCopy = false
-}: {
-  text: string
-  expandKey: string
-  expandedLogs: Set<string>
-  setExpandedLogs: React.Dispatch<React.SetStateAction<Set<string>>>
-  fontSize?: string
-  fontFamily?: string
-  color?: string
-  showCopy?: boolean
-}) {
-  const isExpanded = expandedLogs.has(expandKey)
-  const [isOverflowing, setIsOverflowing] = useState(false)
-  const textRef = useRef<HTMLSpanElement>(null)
-  const [copied, setCopied] = useState(false)
-  
-  useEffect(() => {
-    const checkOverflow = () => {
-      if (textRef.current) {
-        setIsOverflowing(textRef.current.scrollWidth > textRef.current.clientWidth)
-      }
-    }
-    checkOverflow()
-    window.addEventListener('resize', checkOverflow)
-    return () => window.removeEventListener('resize', checkOverflow)
-  }, [text])
-  
-  const toggleExpand = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const newSet = new Set(expandedLogs)
-    if (isExpanded) {
-      newSet.delete(expandKey)
-    } else {
-      newSet.add(expandKey)
-    }
-    setExpandedLogs(newSet)
-  }
-  
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    }
-  }
-  
-  return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: isExpanded ? 'flex-start' : 'center', 
-      gap: '4px',
-      minWidth: 0,
-    }}>
-      <span 
-        ref={textRef}
-        style={{
-          fontSize, fontFamily, color,
-          overflow: isExpanded ? 'visible' : 'hidden',
-          textOverflow: isExpanded ? 'clip' : 'ellipsis',
-          whiteSpace: isExpanded ? 'normal' : 'nowrap',
-          wordBreak: isExpanded ? 'break-word' : 'normal',
-          flex: '1',
-          minWidth: 0,
-          lineHeight: 1.4,
-        }}
-        title={isExpanded ? undefined : text}
-      >
-        {text}
-        {showCopy && (
-          <button
-            onClick={handleCopy}
-            style={{
-              border: 'none',
-              background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-              cursor: 'pointer',
-              padding: '2px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              color: copied ? 'var(--green-500)' : 'var(--text-muted)',
-              marginLeft: '4px',
-              verticalAlign: 'middle',
-              borderRadius: '3px',
-            }}
-            title={copied ? 'Copied!' : 'Copy message'}
-          >
-            {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
-          </button>
-        )}
-      </span>
-      {isOverflowing && !isExpanded && (
-        <button
-          onClick={toggleExpand}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            padding: '2px',
-            display: 'flex',
-            alignItems: 'center',
-            color: 'var(--text-muted)',
-            flexShrink: 0,
-            lineHeight: 1,
-          }}
-          title="Expand"
-        >
-          <ChevronDown size={12} />
-        </button>
-      )}
-      {isExpanded && (
-        <button
-          onClick={toggleExpand}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            padding: '2px',
-            display: 'flex',
-            alignItems: 'center',
-            color: 'var(--text-muted)',
-            flexShrink: 0,
-            lineHeight: 1,
-          }}
-          title="Collapse"
-        >
-          <ChevronUp size={12} />
-        </button>
-      )}
-    </div>
-  )
-}
+import { PAGE_SIZE, ALL_ACTIONS, PLATFORM_OPTIONS } from '../constants/logs'
+import { ActionBadge, FilterChip, ExpandableText } from '../components/LogComponents'
 
 export default function Logs() {
   const [searchParams] = useSearchParams()
@@ -322,27 +53,21 @@ export default function Logs() {
 
   const getImageInfo = (id: number): Image | undefined => images.find(img => img.id === id)
 
-const PLATFORM_OPTIONS = [
-  { value: 'all', label: 'All Platforms' },
-  { value: 'linux/amd64', label: 'AMD64' },
-  { value: 'linux/arm64', label: 'ARM64' },
-]
+  const uniqueImageKeys = [...new Set(images.map(img => `${img.name}:${img.tag}`))]
+  const imageOptions = [
+    { value: 'all', label: 'All Images' },
+    ...uniqueImageKeys.map(key => ({ value: key, label: key }))
+  ]
 
-const uniqueImageKeys = [...new Set(images.map(img => `${img.name}:${img.tag}`))]
-const imageOptions = [
-  { value: 'all', label: 'All Images' },
-  ...uniqueImageKeys.map(key => ({ value: key, label: key }))
-]
-
-const filtered = logs.filter(log => {
-  const q = searchQuery.toLowerCase()
-  const matchSearch = !q || log.message.toLowerCase().includes(q) || log.action.toLowerCase().includes(q)
-  const matchAction = selectedAction === 'all' || log.action === selectedAction
-  const img = getImageInfo(log.image_id)
-  const matchImage = selectedImageKey === 'all' || (img && `${img.name}:${img.tag}` === selectedImageKey)
-  const matchPlatform = selectedPlatform === 'all' || (img && img.platform === selectedPlatform)
-  return matchSearch && matchAction && matchImage && matchPlatform
-})
+  const filtered = logs.filter(log => {
+    const q = searchQuery.toLowerCase()
+    const matchSearch = !q || log.message.toLowerCase().includes(q) || log.action.toLowerCase().includes(q)
+    const matchAction = selectedAction === 'all' || log.action === selectedAction
+    const img = getImageInfo(log.image_id)
+    const matchImage = selectedImageKey === 'all' || (img && `${img.name}:${img.tag}` === selectedImageKey)
+    const matchPlatform = selectedPlatform === 'all' || (img && img.platform === selectedPlatform)
+    return matchSearch && matchAction && matchImage && matchPlatform
+  })
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -354,7 +79,6 @@ const filtered = logs.filter(log => {
 
   return (
     <div className="content-center">
-      {/* Header */}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <h1>Logs</h1>
@@ -372,12 +96,10 @@ const filtered = logs.filter(log => {
         </button>
       </div>
 
-      {/* Filter Bar — Railway style */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '12px',
         marginBottom: '12px', flexWrap: 'nowrap',
       }}>
-        {/* Search */}
         <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
           <Search size={13} style={{
             position: 'absolute', left: '10px', top: '50%',
@@ -401,10 +123,8 @@ const filtered = logs.filter(log => {
           />
         </div>
 
-        {/* Divider */}
         <div style={{ width: '1px', height: '20px', background: 'var(--border-color)', flexShrink: 0 }} />
 
-        {/* Filters on the right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <FilterChip label="All Platforms" value={selectedPlatform} options={PLATFORM_OPTIONS} onChange={setSelectedPlatform} />
           <FilterChip label="All Images" value={selectedImageKey} options={imageOptions} onChange={setSelectedImageKey} />
@@ -428,13 +148,11 @@ const filtered = logs.filter(log => {
         </div>
       </div>
 
-      {/* Log Table */}
       <div style={{
         border: '1px solid var(--border-color)',
         borderRadius: '10px', overflow: 'hidden',
         background: 'var(--bg-primary)',
       }}>
-        {/* Table Header */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '140px 1.2fr 100px 2fr',
@@ -453,7 +171,6 @@ const filtered = logs.filter(log => {
           <span style={{ textAlign: 'left' }}>Message</span>
         </div>
 
-        {/* Rows */}
         {loading ? (
           <div style={{ padding: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '13px' }}>
             <RefreshCw size={15} className="spin" />
@@ -488,12 +205,10 @@ const filtered = logs.filter(log => {
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                {/* Time */}
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                   {formatTime(log.created_at)}
                 </span>
 
-                {/* Image */}
                 {img ? (
                   <ExpandableText
                     text={`${img.name}:${img.tag}`}
@@ -509,12 +224,10 @@ const filtered = logs.filter(log => {
                   <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>—</span>
                 )}
 
-                {/* Action badge */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                   <ActionBadge action={log.action} />
                 </div>
 
-                {/* Message */}
                 <ExpandableText
                   text={log.message}
                   expandKey={`${log.id}-message`}
@@ -527,7 +240,6 @@ const filtered = logs.filter(log => {
           })
         )}
 
-        {/* Pagination — Railway style */}
         {!loading && totalPages > 1 && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',

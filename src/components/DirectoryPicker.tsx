@@ -1,35 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  X, Folder, Home, Monitor, FileText, Download,
-  HardDrive, FolderOpen, RotateCcw
-} from 'lucide-react'
+import { X, FolderOpen } from 'lucide-react'
 import { browseApi } from '../api'
-
-interface Directory {
-  name: string
-  path: string
-  isDir: boolean
-  modTime?: string
-}
-
-interface SpecialDir {
-  name: string
-  path: string
-  icon: string
-}
-
-interface Breadcrumb {
-  name: string
-  path: string
-}
-
-interface BrowseResponse {
-  current: string
-  parent: string
-  dirs: Directory[]
-  specials?: SpecialDir[]
-  breadcrumbs?: Breadcrumb[]
-}
+import type { Directory, SpecialDir, Breadcrumb, BrowseResponse } from '../types/directory'
+import { renderSpecialDirButton } from './DirectoryPickerSidebar'
+import { renderBreadcrumb, renderRefreshButton } from './DirectoryPickerBreadcrumb'
+import { renderDirectoryList } from './DirectoryPickerContent'
 
 interface DirectoryPickerProps {
   isOpen: boolean
@@ -38,21 +13,11 @@ interface DirectoryPickerProps {
   initialPath?: string
 }
 
-const iconMap: Record<string, React.ReactNode> = {
-  home: <Home size={16} />,
-  desktop: <Monitor size={16} />,
-  documents: <FileText size={16} />,
-  downloads: <Download size={16} />,
-  drive: <HardDrive size={16} />,
-  root: <HardDrive size={16} />,
-}
-
 export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath }: DirectoryPickerProps) {
   const [currentPath, setCurrentPath] = useState(initialPath || '')
   const [directories, setDirectories] = useState<Directory[]>([])
   const [specialDirs, setSpecialDirs] = useState<SpecialDir[]>([])
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([])
-  const [parentPath, setParentPath] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -66,7 +31,6 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
       setDirectories(data.dirs || [])
       setSpecialDirs(data.specials || [])
       setBreadcrumbs(data.breadcrumbs || [])
-      setParentPath(data.parent)
     } catch (err: any) {
       setError(err.message || 'Failed to load directory')
     } finally {
@@ -129,7 +93,6 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div style={{
           padding: '16px 20px',
           borderBottom: '1px solid var(--border-color)',
@@ -188,9 +151,7 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
           </button>
         </div>
 
-        {/* Main Content */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          {/* Sidebar - Quick Access */}
           <div style={{
             width: '150px',
             borderRight: '1px solid var(--border-color)',
@@ -210,57 +171,10 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
             }}>
               Quick Access
             </div>
-            {specialDirs.map((special) => (
-              <button
-                key={special.path}
-                onClick={() => loadDirectory(special.path)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 6px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: currentPath === special.path
-                    ? 'rgba(139, 92, 246, 0.15)'
-                    : 'transparent',
-                  color: currentPath === special.path
-                    ? '#8b5cf6'
-                    : 'var(--text-secondary)',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  textAlign: 'left',
-                  fontWeight: currentPath === special.path ? 500 : 400,
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPath !== special.path) {
-                    e.currentTarget.style.background = 'var(--bg-tertiary)'
-                    e.currentTarget.style.color = 'var(--text-primary)'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPath !== special.path) {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.color = 'var(--text-secondary)'
-                  }
-                }}
-              >
-                <span style={{
-                  color: currentPath === special.path ? '#8b5cf6' : 'var(--text-muted)',
-                  display: 'flex',
-                  flexShrink: 0,
-                }}>
-                  {iconMap[special.icon] || <Folder size={16} />}
-                </span>
-                {special.name}
-              </button>
-            ))}
+            {specialDirs.map((special) => renderSpecialDirButton(special, currentPath, loadDirectory))}
           </div>
 
-          {/* Main Area */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {/* Breadcrumb Navigation */}
             <div style={{
               padding: '10px 12px',
               borderBottom: '1px solid var(--border-color)',
@@ -269,94 +183,10 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
               gap: '4px',
               background: 'var(--bg-primary)',
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '2px',
-                flex: 1,
-                overflow: 'hidden',
-                minWidth: 0,
-              }}>
-                {breadcrumbs.map((crumb, index) => (
-                  <div key={crumb.path} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: index === breadcrumbs.length - 1 ? 0 : 1,
-                    minWidth: index === breadcrumbs.length - 1 ? 'auto' : '0',
-                    overflow: 'hidden',
-                  }}>
-                    {index > 0 && (
-                      <span style={{
-                        color: 'var(--text-muted)',
-                        margin: '0 4px',
-                        flexShrink: 0,
-                      }}>/
-                    </span>
-                    )}
-                    <button
-                      onClick={() => loadDirectory(crumb.path)}
-                      style={{
-                        border: 'none',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        color: index === breadcrumbs.length - 1
-                          ? 'var(--text-primary)'
-                          : '#8b5cf6',
-                        fontSize: '13px',
-                        padding: '4px 4px',
-                        borderRadius: '4px',
-                        fontWeight: index === breadcrumbs.length - 1 ? 500 : 400,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        transition: 'all 0.15s',
-                        maxWidth: index === breadcrumbs.length - 1 ? '150px' : '80px',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (index !== breadcrumbs.length - 1) {
-                          e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'
-                        } else {
-                          e.currentTarget.style.background = 'var(--bg-tertiary)'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                      }}
-                      title={crumb.path}
-                    >
-                      {crumb.name}
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => loadDirectory(currentPath)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  padding: '4px',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--bg-tertiary)'
-                  e.currentTarget.style.color = 'var(--text-primary)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = 'var(--text-muted)'
-                }}
-                title="Refresh"
-              >
-                <RotateCcw size={14} />
-              </button>
+              {renderBreadcrumb(breadcrumbs, loadDirectory)}
+              {renderRefreshButton(loadDirectory, currentPath)}
             </div>
 
-            {/* Directory List */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
@@ -364,7 +194,6 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
               display: 'flex',
               flexDirection: 'column',
             }}>
-              {/* List Header */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -381,137 +210,13 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
                 <div style={{ width: '70px', textAlign: 'left' }}>Type</div>
               </div>
 
-              {/* List Content */}
               <div style={{ flex: 1, overflowY: 'auto' }}>
-                {loading ? (
-                  <div style={{
-                    padding: '60px 20px',
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                  }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      border: '2px solid var(--border-color)',
-                      borderTopColor: '#8b5cf6',
-                      borderRadius: '50%',
-                      margin: '0 auto 12px',
-                      animation: 'spin 0.8s linear infinite',
-                    }} />
-                    <div style={{ fontSize: '13px' }}>Loading directories...</div>
-                  </div>
-                ) : error ? (
-                  <div style={{
-                    padding: '60px 20px',
-                    textAlign: 'center',
-                    color: '#ef4444',
-                  }}>
-                    <div style={{ fontSize: '13px', marginBottom: '12px' }}>{error}</div>
-                    <button
-                      onClick={() => loadDirectory(currentPath)}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-color)',
-                        background: 'var(--bg-secondary)',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : directories.length === 0 ? (
-                  <div style={{
-                    padding: '60px 20px',
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                  }}>
-                    <Folder size={40} style={{
-                      marginBottom: '12px',
-                      opacity: 0.5,
-                    }} />
-                    <div style={{ fontSize: '13px' }}>
-                      No folders in this directory
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    {directories.map((dir) => (
-                      <div
-                        key={dir.path}
-                        onClick={() => loadDirectory(dir.path)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '8px 12px',
-                          borderBottom: '1px solid var(--border-color)',
-                          cursor: 'pointer',
-                          transition: 'all 0.12s',
-                          background: 'var(--bg-primary)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'var(--bg-tertiary)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'var(--bg-primary)'
-                        }}
-                        title={dir.name}
-                      >
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          flex: 1,
-                          gap: '8px',
-                          minWidth: 0,
-                        }}>
-                          <Folder size={16} style={{
-                            color: '#8b5cf6',
-                            flexShrink: 0,
-                          }} />
-                          <span style={{
-                            fontSize: '13px',
-                            color: 'var(--text-primary)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            {dir.name}
-                          </span>
-                        </div>
-                        <div style={{
-                          width: '150px',
-                          textAlign: 'left',
-                          fontSize: '12px',
-                          color: 'var(--text-secondary)',
-                          flexShrink: 0,
-                          paddingRight: '12px',
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {dir.modTime ? new Date(dir.modTime).toLocaleString() : '--'}
-                        </div>
-                        <div style={{
-                          width: '70px',
-                          textAlign: 'left',
-                          fontSize: '12px',
-                          color: 'var(--text-muted)',
-                          flexShrink: 0,
-                          whiteSpace: 'nowrap',
-                        }}>
-                          File folder
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {renderDirectoryList(directories, loading, error, loadDirectory, currentPath)}
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{
           padding: '16px 20px',
           borderTop: '1px solid var(--border-color)',
