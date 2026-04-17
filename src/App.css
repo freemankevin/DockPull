@@ -138,8 +138,11 @@ body, * {
 }
 
 .docs-link-icon {
-  margin-left: auto;
-  opacity: 0.5;
+  color: #d2d1d6;
+}
+
+[data-theme="dark"] .docs-link-icon {
+  color: #8a8599;
 }
 
 .nav-top-divider {
@@ -396,8 +399,12 @@ body, * {
 
 .user-menu-divider {
   height: 1px;
-  background: var(--border-color);
+  background: #f2f1f3;
   margin: 0;
+}
+
+[data-theme="dark"] .user-menu-divider {
+  background: hsl(250, 20%, 18%);
 }
 
 .user-menu-item {
@@ -516,7 +523,7 @@ body, * {
  ═══════════════════════════════════════════════════════════ */
 .card-body {
   flex: 1;
-  padding: 50px 24px 24px 24px;
+  padding: 50px 24px 80px 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1939,7 +1946,6 @@ select.form-control {
 .settings-container {
   display: flex;
   justify-content: center;
-  min-height: 100%;
   background: var(--bg-primary);
 }
 
@@ -2056,7 +2062,7 @@ select.form-control {
 .settings-content {
   width: 880px;
   flex-shrink: 0;
-  padding: 40px 0 48px;
+  padding: 40px 0 80px;
   background: var(--bg-primary);
 }
 
@@ -2107,6 +2113,7 @@ select.form-control {
   display: flex;
   gap: 10px;
   padding-top: 8px;
+  margin-bottom: 32px;
 }
 
 /* ═══════════════════════════════════════════════════════════

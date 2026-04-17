@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { Camera, Sun, Moon, Power, MoreVertical, Globe } from 'lucide-react'
+import { Camera, Sun, Moon, LogOut, MoreVertical, Languages } from 'lucide-react'
 import { useAuth } from './AuthContext'
 import { useTheme } from './ThemeContext'
 import { useLanguage } from './LanguageContext'
@@ -113,18 +113,27 @@ export function UserMenu() {
             </div>
           </div>
 
+          <div className="user-menu-divider" />
+
+          <button className="user-menu-item" onClick={() => { setOpen(false); window.open('/docs/introduction', '_blank') }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
+            <span>Documentation</span>
+          </button>
+
           <button className="user-menu-item" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             <span>{theme === 'dark' ? t('theme.light') : t('theme.dark')}</span>
           </button>
 
           <button className="user-menu-item" onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}>
-            <Globe size={16} />
-            <span>{t('lang.switch')}</span>
+            <Languages size={16} />
+            <span>{language === 'zh' ? '简体中文' : 'English'}</span>
           </button>
 
+          <div className="user-menu-divider" />
+
           <button className="user-menu-item user-menu-danger" onClick={handleLogout}>
-            <Power size={16} />
+            <LogOut size={16} />
             <span>{t('user.logout')}</span>
           </button>
         </div>

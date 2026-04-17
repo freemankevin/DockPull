@@ -92,6 +92,25 @@ func GetDataDir() string {
 	return filepath.Join(getProjectRoot(), "data")
 }
 
+// GetDefaultExportPath returns the default export path
+// Priority: 1. Desktop/DockPull, 2. Project root/exports
+func GetDefaultExportPath() string {
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		desktop := filepath.Join(home, "Desktop")
+		if runtime.GOOS == "windows" {
+			if _, err := os.Stat(desktop); err != nil {
+				desktop = filepath.Join(home, "桌面")
+			}
+		}
+		if _, err := os.Stat(desktop); err == nil {
+			exportPath := filepath.Join(desktop, "DockPull")
+			return exportPath
+		}
+	}
+	return filepath.Join(getProjectRoot(), "exports")
+}
+
 // GetExportsDir returns the exports directory path
 func GetExportsDir() string {
 	return filepath.Join(getProjectRoot(), "exports")

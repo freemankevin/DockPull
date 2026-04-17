@@ -1,4 +1,4 @@
-import { Package, Settings, BarChart3, FileText, BookOpen, ExternalLink } from 'lucide-react'
+import { Package, Settings, BarChart3, Terminal, ArrowUpRight, MessageSquare } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
 import Images from './pages/Images'
 import SettingsPage from './pages/Settings'
@@ -54,7 +54,7 @@ function MainApp() {
           </li>
           <li>
             <NavLink to="/logs">
-              <FileText size={18} strokeWidth={1.75} />
+              <Terminal size={18} strokeWidth={1.75} />
               <span>{t('nav.logs')}</span>
             </NavLink>
           </li>
@@ -68,14 +68,24 @@ function MainApp() {
             <a
               href="/docs/introduction"
               className="docs-link"
-              onClick={(e) => {
-                e.preventDefault()
-                window.location.href = '/docs/introduction'
-              }}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <BookOpen size={18} strokeWidth={1.75} />
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
               <span>{t('nav.docs')}</span>
-              <ExternalLink size={12} className="docs-link-icon" />
+              <ArrowUpRight size={14} strokeWidth={2} className="docs-link-icon ml-[3px]" />
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/freemankevin/DockerPull/issues"
+              className="docs-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageSquare size={18} strokeWidth={1.75} />
+              <span>{t('nav.support')}</span>
+              <ArrowUpRight size={14} strokeWidth={2} className="docs-link-icon ml-[3px]" />
             </a>
           </li>
         </ul>

@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"docker-pull-manager/internal/config"
 	"docker-pull-manager/internal/models"
 )
 
@@ -24,7 +25,7 @@ func GetSettings(db *sql.DB) (*models.Settings, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return &models.Settings{
-				ExportPath:         "./exports",
+				ExportPath:         config.GetDefaultExportPath(),
 				RetryMaxAttempts:   0,
 				RetryIntervalSec:   30,
 				EnableWebhook:      false,
