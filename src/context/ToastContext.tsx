@@ -106,24 +106,24 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               onClick={() => removeToast(toast.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '12px 16px',
-                background: colors.bg,
-                color: 'white',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)',
-                fontSize: '14px',
-                fontWeight: 500,
-                pointerEvents: 'auto',
-                cursor: 'pointer',
-                animation: 'toastSlideIn 0.3s ease-out',
-                transform: `translateY(${index * 4}px)`,
-                minWidth: '200px',
-                maxWidth: '400px',
-              }}
+style={{
+                 display: 'flex',
+                 alignItems: 'center',
+                 gap: '10px',
+                 padding: '12px 16px',
+                 background: colors.bg,
+                 color: 'white',
+                 borderRadius: 'var(--radius-card)',
+                 boxShadow: '0 4px 12px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1)',
+                 fontSize: '14px',
+                 fontWeight: 500,
+                 pointerEvents: 'auto',
+                 cursor: 'pointer',
+                 animation: 'toastSlideIn 0.3s ease-out',
+                 transform: `translateY(${index * 4}px)`,
+                 minWidth: '200px',
+                 maxWidth: '400px',
+               }}
             >
               <span style={{ display: 'flex', alignItems: 'center' }}>
                 {getIcon(toast.type)}

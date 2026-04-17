@@ -99,31 +99,31 @@ export default function TokenSettings({ getValue, setFormData, visibleTokens, se
   return (
     <>
       {visibleTokens.length === 0 && !showAddToken && (
-        <div style={{
-          padding: '40px',
-          textAlign: 'center',
-          color: 'var(--text-muted)',
-          background: 'var(--bg-tertiary)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-color)',
-        }}>
+<div style={{
+           padding: '40px',
+           textAlign: 'center',
+           color: 'var(--text-muted)',
+           background: 'var(--bg-tertiary)',
+           borderRadius: 'var(--radius-card)',
+           border: '1px solid var(--border-color)',
+         }}>
           <Key size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
           <p style={{ margin: 0, fontSize: '14px' }}>{t('settings.tokens.none')}</p>
           <button
             onClick={() => setShowAddToken(true)}
-            style={{
-              marginTop: '16px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              fontSize: '13px',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
+style={{
+               marginTop: '16px',
+               display: 'inline-flex',
+               alignItems: 'center',
+               gap: '6px',
+               padding: '8px 16px',
+               fontSize: '13px',
+               border: '1px solid var(--border-color)',
+               borderRadius: 'var(--radius-xs)',
+               background: 'var(--bg-secondary)',
+               color: 'var(--text-secondary)',
+               cursor: 'pointer',
+             }}
           >
             <Plus size={14} /> {t('settings.tokens.add')}
           </button>
@@ -142,16 +142,16 @@ export default function TokenSettings({ getValue, setFormData, visibleTokens, se
                 <span>{registry.name}</span>
                 <button
                   onClick={() => removeTokenRegistry(tokenId)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '2px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                  }}
+style={{
+                     display: 'inline-flex',
+                     alignItems: 'center',
+                     padding: '2px',
+                     border: 'none',
+                     background: 'transparent',
+                     color: 'var(--text-muted)',
+                     cursor: 'pointer',
+                     borderRadius: 'var(--radius-xs)',
+                   }}
                   title={t('settings.tokens.remove')}
                 >
                   <X size={14} />
@@ -179,13 +179,13 @@ export default function TokenSettings({ getValue, setFormData, visibleTokens, se
       })}
 
       {showAddToken && (
-        <div style={{
-          marginTop: visibleTokens.length > 0 ? '20px' : 0,
-          padding: '16px',
-          background: 'var(--bg-tertiary)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-color)',
-        }}>
+<div style={{
+           marginTop: visibleTokens.length > 0 ? '20px' : 0,
+           padding: '16px',
+           background: 'var(--bg-tertiary)',
+           borderRadius: 'var(--radius-card)',
+           border: '1px solid var(--border-color)',
+         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -197,16 +197,16 @@ export default function TokenSettings({ getValue, setFormData, visibleTokens, se
             </div>
             <button
               onClick={() => setShowAddToken(false)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '2px',
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                borderRadius: '4px',
-              }}
+style={{
+                 display: 'inline-flex',
+                 alignItems: 'center',
+                 padding: '2px',
+                 border: 'none',
+                 background: 'transparent',
+                 color: 'var(--text-muted)',
+                 cursor: 'pointer',
+                 borderRadius: 'var(--radius-xs)',
+               }}
               title={t('settings.tokens.close')}
             >
               <X size={14} />
@@ -220,19 +220,19 @@ export default function TokenSettings({ getValue, setFormData, visibleTokens, se
                 <button
                   key={tokenId}
                   onClick={() => addTokenRegistry(tokenId)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 14px',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '6px',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    textAlign: 'left',
-                  }}
+style={{
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '10px',
+                     padding: '10px 14px',
+                     border: '1px solid var(--border-color)',
+                     borderRadius: 'var(--radius-xs)',
+                     background: 'var(--bg-secondary)',
+                     color: 'var(--text-primary)',
+                     cursor: 'pointer',
+                     fontSize: '13px',
+                     textAlign: 'left',
+                   }}
                 >
                   <Key size={14} style={{ color: 'var(--text-muted)' }} />
                   {registry.name}
@@ -251,19 +251,19 @@ export default function TokenSettings({ getValue, setFormData, visibleTokens, se
       {visibleTokens.length > 0 && !showAddToken && (
         <button
           onClick={() => setShowAddToken(true)}
-          style={{
-            marginTop: '20px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            fontSize: '13px',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-          }}
+style={{
+             marginTop: '20px',
+             display: 'inline-flex',
+             alignItems: 'center',
+             gap: '6px',
+             padding: '8px 16px',
+             fontSize: '13px',
+             border: '1px solid var(--border-color)',
+             borderRadius: 'var(--radius-xs)',
+             background: 'var(--bg-secondary)',
+             color: 'var(--text-secondary)',
+             cursor: 'pointer',
+           }}
         >
           <Plus size={14} /> {t('settings.tokens.addAnother')}
         </button>

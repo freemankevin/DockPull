@@ -82,7 +82,7 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
       <div
         style={{
           background: 'var(--bg-primary)',
-          borderRadius: '8px',
+          borderRadius: 'var(--radius-lg)',
           width: '720px',
           maxWidth: '90vw',
           height: '560px',
@@ -104,18 +104,18 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
           background: 'var(--bg-secondary)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-            }}>
-              <FolderOpen size={18} />
-            </div>
+<div style={{
+               width: '32px',
+               height: '32px',
+               borderRadius: 'var(--radius-lg)',
+               background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+               display: 'flex',
+               alignItems: 'center',
+               justifyContent: 'center',
+               color: 'white',
+             }}>
+               <FolderOpen size={18} />
+             </div>
             <div>
               <div style={{
                 fontSize: '15px',
@@ -137,7 +137,7 @@ export default function DirectoryPicker({ isOpen, onClose, onSelect, initialPath
               cursor: 'pointer',
               color: 'var(--text-muted)',
               padding: '6px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-xs)',
               transition: 'all 0.15s',
             }}
             onMouseEnter={(e) => {

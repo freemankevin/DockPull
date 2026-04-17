@@ -16,6 +16,20 @@ interface ImageModalProps {
   handlePlatformToggle: (platform: string) => void
 }
 
+function ToggleSwitch({ checked, onChange, label, t }: { checked: boolean; onChange: () => void; label: string; t: (key: string) => string }) {
+  return (
+    <div className="toggle-switch-row">
+      <div className="toggle-switch-label">{label}</div>
+      <label className="toggle-switch" data-checked={checked}>
+        <div className={`toggle-track ${checked ? 'checked' : ''}`} onClick={onChange}>
+          <div className={`toggle-thumb ${checked ? 'checked' : ''}`} />
+        </div>
+        <span className="toggle-status">{checked ? t('settings.webhook.enabled') : t('settings.webhook.disabled')}</span>
+      </label>
+    </div>
+  )
+}
+
 export default function ImageModal({
   showModal,
   batchMode,
@@ -43,14 +57,12 @@ export default function ImageModal({
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={batchMode}
-                  onChange={(e) => setBatchMode(e.target.checked)}
-                />
-                <span>{t('modal.batchMode')}</span>
-              </label>
+              <ToggleSwitch
+                checked={batchMode}
+                onChange={() => setBatchMode(!batchMode)}
+                label={t('modal.batchMode')}
+                t={t}
+              />
             </div>
 
             {batchMode ? (
@@ -95,14 +107,12 @@ export default function ImageModal({
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.is_auto_export}
-                  onChange={(e) => setFormData({ ...formData, is_auto_export: e.target.checked })}
-                />
-                <span>{t('modal.autoExport')}</span>
-              </label>
+              <ToggleSwitch
+                checked={formData.is_auto_export}
+                onChange={() => setFormData({ ...formData, is_auto_export: !formData.is_auto_export })}
+                label={t('modal.autoExport')}
+                t={t}
+              />
             </div>
           </div>
 

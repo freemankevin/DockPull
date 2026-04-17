@@ -39,15 +39,15 @@ export function renderDirectoryList(
         <div style={{ fontSize: '13px', marginBottom: '12px' }}>{error}</div>
         <button
           onClick={() => loadDirectory(currentPath)}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
+style={{
+             padding: '6px 12px',
+             borderRadius: 'var(--radius-xs)',
+             border: '1px solid var(--border-color)',
+             background: 'var(--bg-secondary)',
+             color: 'var(--text-primary)',
+             fontSize: '12px',
+             cursor: 'pointer',
+           }}
         >
           Retry
         </button>

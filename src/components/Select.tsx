@@ -35,42 +35,42 @@ export default function Select({ value, onChange, options, placeholder = 'Select
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          width: '100%',
-          padding: '11px 14px',
-          border: '1px solid var(--border-color)',
-          borderRadius: '8px',
-          background: 'var(--bg-tertiary)',
-          color: selectedOption ? 'var(--text-primary)' : 'var(--text-muted)',
-          fontSize: '14px',
-          textAlign: 'left',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          transition: 'border-color 0.15s ease',
-          fontFamily: 'var(--font-sans)',
-        }}
+style={{
+           width: '100%',
+           padding: '11px 14px',
+           border: '1px solid var(--border-color)',
+           borderRadius: 'var(--radius-card)',
+           background: 'var(--bg-tertiary)',
+           color: selectedOption ? 'var(--text-primary)' : 'var(--text-muted)',
+           fontSize: '14px',
+           textAlign: 'left',
+           cursor: 'pointer',
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'space-between',
+           transition: 'border-color 0.15s ease',
+           fontFamily: 'var(--font-sans)',
+         }}
       >
         <span>{selectedOption?.label || placeholder}</span>
         <ChevronDown size={14} style={{ opacity: 0.5, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
       </button>
 
       {isOpen && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 4px)',
-          left: 0,
-          right: 0,
-          background: 'var(--bg-primary)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '8px',
-          boxShadow: 'var(--shadow-lg)',
-          zIndex: 100,
-          overflow: 'hidden',
-          maxHeight: '300px',
-          overflowY: 'auto',
-        }}>
+<div style={{
+           position: 'absolute',
+           top: 'calc(100% + 4px)',
+           left: 0,
+           right: 0,
+           background: 'var(--bg-primary)',
+           border: '1px solid var(--border-color)',
+           borderRadius: 'var(--radius-card)',
+           boxShadow: 'var(--shadow-lg)',
+           zIndex: 100,
+           overflow: 'hidden',
+           maxHeight: '300px',
+           overflowY: 'auto',
+         }}>
           {options.map(opt => (
             <div
               key={opt.value}

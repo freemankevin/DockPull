@@ -19,21 +19,21 @@ export function renderSpecialDirButton(
     <button
       key={special.path}
       onClick={() => loadDirectory(special.path)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px 6px',
-        borderRadius: '6px',
-        border: 'none',
-        background: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-        color: isActive ? '#8b5cf6' : 'var(--text-secondary)',
-        fontSize: '13px',
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        textAlign: 'left',
-        fontWeight: isActive ? 500 : 400,
-      }}
+style={{
+         display: 'flex',
+         alignItems: 'center',
+         gap: '8px',
+         padding: '8px 6px',
+         borderRadius: 'var(--radius-xs)',
+         border: 'none',
+         background: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+         color: isActive ? '#8b5cf6' : 'var(--text-secondary)',
+         fontSize: '13px',
+         cursor: 'pointer',
+         transition: 'all 0.15s',
+         textAlign: 'left',
+         fontWeight: isActive ? 500 : 400,
+       }}
       onMouseEnter={(e) => {
         if (!isActive) {
           e.currentTarget.style.background = 'var(--bg-tertiary)'

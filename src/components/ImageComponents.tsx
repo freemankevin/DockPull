@@ -64,7 +64,7 @@ export function CopyButton({ text }: { text: string }) {
         padding: '4px',
         border: 'none',
         background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-        borderRadius: '4px',
+        borderRadius: 'var(--radius-xs)',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -86,7 +86,7 @@ export function PlatformBadge({ platform }: { platform: string }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '5px',
-      padding: '4px 10px', borderRadius: '6px',
+      padding: '4px 10px', borderRadius: 'var(--radius-xs)',
       border: '1px solid var(--border-color)',
       background: 'var(--bg-tertiary)',
       fontSize: '12.5px', fontWeight: 500,
@@ -110,7 +110,7 @@ export function PlatformOption({
   return (
     <label style={{
       display: 'flex', alignItems: 'center', gap: '6px',
-      padding: '4px 10px', borderRadius: '6px', cursor: 'pointer',
+      padding: '4px 10px', borderRadius: 'var(--radius-xs)', cursor: 'pointer',
       border: `1px solid ${selected ? 'var(--purple-600)' : 'var(--border-color)'}`,
       background: selected ? 'var(--accent-bg)' : 'var(--bg-tertiary)',
       fontSize: '12.5px', fontWeight: 500,

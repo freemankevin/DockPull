@@ -134,7 +134,7 @@
   color: var(--text-primary);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   outline: none;
   transition: all 0.2s ease;
   font-family: var(--font-sans);
@@ -166,7 +166,7 @@
   color: var(--text-tertiary);
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   pointer-events: none;
 }
 
@@ -178,7 +178,7 @@
   width: 100%;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow);
   z-index: 100;
   max-height: 400px;
@@ -200,7 +200,7 @@
   text-align: left;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -253,7 +253,7 @@
   background: rgba(139, 92, 246, 0.2);
   color: var(--purple-400);
   padding: 0 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   font-weight: 500;
 }
 
@@ -291,7 +291,7 @@
   height: 36px;
   color: var(--text-secondary);
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   transition: all 0.15s ease;
   background: transparent;
   border: none;
@@ -332,7 +332,7 @@
   min-width: 120px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow);
   z-index: 100;
   padding: 4px;
@@ -348,7 +348,7 @@
   color: var(--text-secondary);
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   text-align: left;
@@ -375,7 +375,7 @@
   padding: 8px;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -429,7 +429,7 @@
 .doc-logo-img {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-card);
 }
 
 .doc-logo-text {
@@ -491,7 +491,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   text-decoration: none;
   color: var(--text-secondary);
   font-size: 13px;

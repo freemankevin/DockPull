@@ -115,14 +115,14 @@ export default function Logs() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder={t('logs.searchPlaceholder')}
-            style={{
-              width: '100%', height: '32px',
-              padding: '0 10px 0 30px',
-              border: '1px solid var(--border-color)', borderRadius: '6px',
-              background: 'var(--bg-tertiary)', color: 'var(--text-primary)',
-              fontSize: '13px', outline: 'none',
-              transition: 'border-color .15s',
-            }}
+style={{
+               width: '100%', height: '32px',
+               padding: '0 10px 0 30px',
+               border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xs)',
+               background: 'var(--bg-tertiary)', color: 'var(--text-primary)',
+               fontSize: '13px', outline: 'none',
+               transition: 'border-color .15s',
+             }}
             onFocus={e => (e.target.style.borderColor = 'var(--purple-600)')}
             onBlur={e => (e.target.style.borderColor = 'var(--border-color)')}
           />
@@ -138,12 +138,12 @@ export default function Logs() {
           {(selectedImageKey !== 'all' || selectedAction !== 'all' || selectedPlatform !== 'all') && (
             <button
               onClick={() => { setSelectedImageKey('all'); setSelectedAction('all'); setSelectedPlatform('all') }}
-              style={{
-                padding: '5px 10px', height: '32px', fontSize: '12px',
-                border: 'none', borderRadius: '6px', cursor: 'pointer',
-                background: 'transparent', color: 'var(--text-muted)',
-                transition: 'color .12s',
-              }}
+style={{
+                 padding: '5px 10px', height: '32px', fontSize: '12px',
+                 border: 'none', borderRadius: 'var(--radius-xs)', cursor: 'pointer',
+                 background: 'transparent', color: 'var(--text-muted)',
+                 transition: 'color .12s',
+               }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
             >
@@ -153,11 +153,11 @@ export default function Logs() {
         </div>
       </div>
 
-      <div style={{
-        border: '1px solid var(--border-color)',
-        borderRadius: '10px', overflow: 'hidden',
-        background: 'var(--bg-primary)',
-      }}>
+<div style={{
+         border: '1px solid var(--border-color)',
+         borderRadius: 'var(--radius-card)', overflow: 'hidden',
+         background: 'var(--bg-primary)',
+       }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: '140px 1.2fr 100px 2fr',
@@ -258,30 +258,30 @@ export default function Logs() {
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '28px', height: '28px',
-                  border: 'none', borderRadius: '5px',
-                  background: 'transparent', cursor: page === 0 ? 'not-allowed' : 'pointer',
-                  color: page === 0 ? 'var(--text-muted)' : 'var(--purple-500)',
-                  opacity: page === 0 ? .4 : 1,
-                  transition: 'all .12s',
-                }}
+style={{
+                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                   width: '28px', height: '28px',
+                   border: 'none', borderRadius: 'var(--radius-xs)',
+                   background: 'transparent', cursor: page === 0 ? 'not-allowed' : 'pointer',
+                   color: page === 0 ? 'var(--text-muted)' : 'var(--purple-500)',
+                   opacity: page === 0 ? .4 : 1,
+                   transition: 'all .12s',
+                 }}
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '28px', height: '28px',
-                  border: 'none', borderRadius: '5px',
-                  background: 'transparent', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
-                  color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--purple-500)',
-                  opacity: page >= totalPages - 1 ? .4 : 1,
-                  transition: 'all .12s',
-                }}
+style={{
+                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                   width: '28px', height: '28px',
+                   border: 'none', borderRadius: 'var(--radius-xs)',
+                   background: 'transparent', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
+                   color: page >= totalPages - 1 ? 'var(--text-muted)' : 'var(--purple-500)',
+                   opacity: page >= totalPages - 1 ? .4 : 1,
+                   transition: 'all .12s',
+                 }}
               >
                 <ChevronRight size={16} />
               </button>

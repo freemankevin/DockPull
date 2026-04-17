@@ -31,15 +31,15 @@ export default function ExportSettings({ getValue, setFormData, setPickerOpen }:
             const current = getValue('default_platform') || 'linux/amd64,linux/arm64'
             const checked = current.includes(val)
             return (
-              <label key={val} style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
-                border: `1px solid ${checked ? 'var(--purple-600)' : 'var(--border-color)'}`,
-                background: checked ? 'var(--accent-bg)' : 'var(--bg-tertiary)',
-                fontSize: '13px', fontWeight: 500,
-                color: checked ? 'var(--purple-400)' : 'var(--text-secondary)',
-                transition: 'all 0.12s', userSelect: 'none',
-              }}>
+<label key={val} style={{
+                 display: 'flex', alignItems: 'center', gap: '6px',
+                 padding: '6px 12px', borderRadius: 'var(--radius-xs)', cursor: 'pointer',
+                 border: `1px solid ${checked ? 'var(--purple-600)' : 'var(--border-color)'}`,
+                 background: checked ? 'var(--accent-bg)' : 'var(--bg-tertiary)',
+                 fontSize: '13px', fontWeight: 500,
+                 color: checked ? 'var(--purple-400)' : 'var(--text-secondary)',
+                 transition: 'all 0.12s', userSelect: 'none',
+               }}>
                 <Cpu size={14} style={{ color: checked ? 'var(--purple-400)' : 'var(--text-muted)' }} />
                 <input type="checkbox" checked={checked} style={{ display: 'none' }}
                   onChange={e => {

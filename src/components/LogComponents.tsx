@@ -81,16 +81,16 @@ export function FilterChip({
     <div ref={containerRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '5px 12px', height: '32px',
-          border: value !== 'all' ? '1px solid var(--purple-600)' : '1px solid var(--border-color)',
-          borderRadius: '6px', cursor: 'pointer',
-          background: value !== 'all' ? 'var(--accent-bg)' : 'var(--bg-tertiary)',
-          color: value !== 'all' ? 'var(--purple-400)' : 'var(--text-secondary)',
-          fontSize: '13px', fontWeight: 400,
-          whiteSpace: 'nowrap', transition: 'all .12s',
-        }}
+style={{
+           display: 'flex', alignItems: 'center', gap: '6px',
+           padding: '5px 12px', height: '32px',
+           border: value !== 'all' ? '1px solid var(--purple-600)' : '1px solid var(--border-color)',
+           borderRadius: 'var(--radius-xs)', cursor: 'pointer',
+           background: value !== 'all' ? 'var(--accent-bg)' : 'var(--bg-tertiary)',
+           color: value !== 'all' ? 'var(--purple-400)' : 'var(--text-secondary)',
+           fontSize: '13px', fontWeight: 400,
+           whiteSpace: 'nowrap', transition: 'all .12s',
+         }}
       >
         {value === 'all' ? label : selected?.label}
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style={{ opacity: .5, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .12s' }}>
@@ -98,15 +98,15 @@ export function FilterChip({
         </svg>
       </button>
       {open && (
-        <div
-          style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 0,
-            minWidth: '200px', background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-color)', borderRadius: '8px',
-            boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden',
-            animation: 'fadeIn .12s ease',
-          }}
-        >
+<div
+           style={{
+             position: 'absolute', top: 'calc(100% + 4px)', left: 0,
+             minWidth: '200px', background: 'var(--bg-elevated)',
+             border: '1px solid var(--border-color)', borderRadius: 'var(--radius-card)',
+             boxShadow: 'var(--shadow-lg)', zIndex: 100, overflow: 'hidden',
+             animation: 'fadeIn .12s ease',
+           }}
+         >
           {options.map(opt => (
             <div
               key={opt.value}
@@ -222,18 +222,18 @@ export function ExpandableText({
         {showCopy && (
           <button
             onClick={handleCopy}
-            style={{
-              border: 'none',
-              background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-              cursor: 'pointer',
-              padding: '2px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              color: copied ? 'var(--green-500)' : 'var(--text-muted)',
-              marginLeft: '4px',
-              verticalAlign: 'middle',
-              borderRadius: '3px',
-            }}
+style={{
+               border: 'none',
+               background: copied ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+               cursor: 'pointer',
+               padding: '2px',
+               display: 'inline-flex',
+               alignItems: 'center',
+               color: copied ? 'var(--green-500)' : 'var(--text-muted)',
+               marginLeft: '4px',
+               verticalAlign: 'middle',
+               borderRadius: 'var(--radius-xs)',
+             }}
             title={copied ? t('copy.copied') : t('copy.copyName')}
           >
             {copied ? <CheckCircle size={12} /> : <Copy size={12} />}

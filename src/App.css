@@ -487,7 +487,7 @@ body, * {
   color: #6a9f80;
   padding: 4px 12px;
   border: 1px solid #dff1e9;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: #f4faf8;
 }
 
@@ -628,7 +628,7 @@ body, * {
   width: 340px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-xl);
   z-index: 200;
   overflow: hidden;
@@ -731,7 +731,7 @@ body, * {
 
 .notif-list::-webkit-scrollbar-thumb {
   background: var(--border-color-hover);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── Empty State ── */
@@ -746,7 +746,7 @@ body, * {
 .notif-empty-icon-wrap {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   display: flex;
@@ -876,7 +876,7 @@ body, * {
   color: var(--text-muted);
   cursor: pointer;
   padding: 3px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1182,19 +1182,19 @@ body, * {
 }
 
 .icon-cell:nth-child(1) {
-  border-radius: 6px 0 0 0;
+  border-radius: var(--radius-card) 0 0 0;
 }
 
 .icon-cell:nth-child(2) {
-  border-radius: 0 6px 0 0;
+  border-radius: 0 var(--radius-card) 0 0;
 }
 
 .icon-cell:nth-child(3) {
-  border-radius: 0 0 0 6px;
+  border-radius: 0 0 0 var(--radius-card);
 }
 
 .icon-cell:nth-child(4) {
-  border-radius: 0 0 6px 0;
+  border-radius: 0 0 var(--radius-card) 0;
 }
 
 .empty-state-content {
@@ -1423,18 +1423,27 @@ select.form-control {
   width: 16px;
   height: 16px;
   margin: 0;
+  padding: 0;
   flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .checkbox-label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   font-size: 14px;
   color: var(--text-primary);
   font-weight: 400;
   user-select: none;
+  line-height: 1.5;
+}
+
+.checkbox-label span {
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -1442,14 +1451,16 @@ select.form-control {
   width: 16px;
   height: 16px;
   margin: 0;
+  padding: 0;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
   border: 1.5px solid rgba(167, 139, 250, 0.3);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s ease;
+  vertical-align: middle;
 }
 
 .checkbox-label input[type="checkbox"]:hover {
@@ -1491,15 +1502,70 @@ select.form-control {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
-.checkbox-label span {
-  line-height: 16px;
-  display: inline-block;
-  vertical-align: middle;
+/* Toggle Switch */
+.toggle-switch-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toggle-switch-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.toggle-switch {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  position: relative;
+  background: var(--border-color);
+  transition: background 0.2s;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-switch[data-checked="true"] .toggle-track,
+.toggle-track.checked {
+  background: rgba(139, 92, 246, 0.9);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch[data-checked="true"] .toggle-thumb,
+.toggle-track.checked .toggle-thumb {
+  left: 18px;
+}
+
+.toggle-status {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 /* ═══════════════════════════════════════════════════════════
    Modals – Railway style
-═══════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1780,14 +1846,16 @@ select.form-control {
   width: 16px;
   height: 16px;
   margin: 0;
+  padding: 0;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
   border: 1.5px solid rgba(167, 139, 250, 0.3);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s ease;
+  vertical-align: middle;
 }
 
 .platform-option input[type="checkbox"]:hover {
@@ -1931,7 +1999,7 @@ select.form-control {
   align-items: center;
   gap: 12px;
   padding: 7px 11px;
-  border-radius: 6px;
+  border-radius: var(--radius-card);
   border: none;
   background: transparent;
   color: var(--text-tertiary);
@@ -2346,7 +2414,7 @@ select.form-control {
   font-size: 13px;
   background: var(--bg-tertiary);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-primary);
 }
 

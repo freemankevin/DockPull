@@ -9,6 +9,7 @@ export function useImages(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const prevImagesRef = useRef<Image[]>([])
+  const initialLoadDone = useRef(false)
 
   const notify = useCallback((type: 'success' | 'error' | 'info' | 'warning', message: string) => {
     if (onNotification) {
@@ -16,8 +17,10 @@ export function useImages(
     }
   }, [onNotification])
 
-  const fetchImages = useCallback(async () => {
-    setLoading(true)
+  const fetchImages = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setLoading(true)
+    }
     try {
       const res = await imagesApi.list()
       const newImages = res.data || []
@@ -49,13 +52,18 @@ export function useImages(
       setError(err.message)
       setImages([])
     } finally {
-      setLoading(false)
+      if (isInitialLoad) {
+        setLoading(false)
+      }
     }
   }, [notify])
 
   useEffect(() => {
-    fetchImages()
-    const interval = setInterval(fetchImages, 5000)
+    if (!initialLoadDone.current) {
+      fetchImages(true)
+      initialLoadDone.current = true
+    }
+    const interval = setInterval(() => fetchImages(false), 5000)
     return () => clearInterval(interval)
   }, [fetchImages])
 
