@@ -181,6 +181,13 @@ func main() {
 	distDir := "./dist"
 	if _, err := os.Stat(distDir); err == nil {
 		r.Static("/assets", distDir+"/assets")
+		r.StaticFile("/background.jpg", distDir+"/background.jpg")
+		r.StaticFile("/favicon.ico", distDir+"/favicon.ico")
+		r.StaticFile("/favicon-16x16.png", distDir+"/favicon-16x16.png")
+		r.StaticFile("/favicon-32x32.png", distDir+"/favicon-32x32.png")
+		r.StaticFile("/apple-touch-icon.png", distDir+"/apple-touch-icon.png")
+		r.StaticFile("/logo.png", distDir+"/logo.png")
+		r.StaticFile("/avatar.jpg", distDir+"/avatar.jpg")
 		r.NoRoute(func(c *gin.Context) {
 			c.File(distDir + "/index.html")
 		})
