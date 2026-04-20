@@ -131,7 +131,7 @@ func createTables(db *sql.DB) error {
 		}
 	}
 
-	_, _ = db.Exec(`INSERT OR IGNORE INTO settings (id) VALUES (1)`)
+	_, _ = db.Exec(`INSERT OR IGNORE INTO settings (id, export_path, retry_max_attempts, retry_interval_sec, enable_webhook, webhook_url, webhook_type, concurrent_pulls, default_platform, gzip_compression, ghcr_token, dockerhub_username, dockerhub_token, quay_token, acr_username, acr_password, ecr_access_key_id, ecr_secret_access_key, ecr_region, gar_token) VALUES (1, '', 0, 30, 0, '', 'dingtalk', 3, 'linux/amd64,linux/arm64', 9, '', '', '', '', '', '', '', '', '', '')`)
 
 	return nil
 }

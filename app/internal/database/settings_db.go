@@ -13,14 +13,19 @@ func GetSettings(db *sql.DB) (*models.Settings, error) {
 			  ecr_access_key_id, ecr_secret_access_key, ecr_region, gar_token
 			  FROM settings WHERE id = 1`
 
-	var s models.Settings
+	var exportPath, webhookURL, webhookType, defaultPlatform, ghcrToken sql.NullString
+	var dockerHubUsername, dockerHubToken, quayToken, acrUsername, acrPassword sql.NullString
+	var ecrAccessKeyId, ecrSecretAccessKey, ecrRegion, garToken sql.NullString
+	var retryMaxAttempts, retryIntervalSec, concurrentPulls, gzipCompression sql.NullInt64
+	var enableWebhook sql.NullBool
+
 	err := db.QueryRow(query).Scan(
-		&s.ExportPath, &s.RetryMaxAttempts, &s.RetryIntervalSec, &s.EnableWebhook,
-		&s.WebhookURL, &s.WebhookType, &s.ConcurrentPulls, &s.DefaultPlatform,
-		&s.GzipCompression, &s.GhcrToken,
-		&s.DockerHubUsername, &s.DockerHubToken, &s.QuayToken,
-		&s.AcrUsername, &s.AcrPassword,
-		&s.EcrAccessKeyId, &s.EcrSecretAccessKey, &s.EcrRegion, &s.GarToken,
+		&exportPath, &retryMaxAttempts, &retryIntervalSec, &enableWebhook,
+		&webhookURL, &webhookType, &concurrentPulls, &defaultPlatform,
+		&gzipCompression, &ghcrToken,
+		&dockerHubUsername, &dockerHubToken, &quayToken,
+		&acrUsername, &acrPassword,
+		&ecrAccessKeyId, &ecrSecretAccessKey, &ecrRegion, &garToken,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -49,7 +54,48 @@ func GetSettings(db *sql.DB) (*models.Settings, error) {
 		return nil, err
 	}
 
-	return &s, nil
+	return &models.Settings{
+		ExportPath:         nullStringToVal(exportPath, config.GetDefaultExportPath()),
+		RetryMaxAttempts:   nullIntToVal(retryMaxAttempts, 0),
+		RetryIntervalSec:   nullIntToVal(retryIntervalSec, 30),
+		EnableWebhook:      nullBoolToVal(enableWebhook, false),
+		WebhookURL:         nullStringToVal(webhookURL, ""),
+		WebhookType:        nullStringToVal(webhookType, "dingtalk"),
+		ConcurrentPulls:    nullIntToVal(concurrentPulls, 3),
+		DefaultPlatform:    nullStringToVal(defaultPlatform, "linux/amd64,linux/arm64"),
+		GzipCompression:    nullIntToVal(gzipCompression, 9),
+		GhcrToken:          nullStringToVal(ghcrToken, ""),
+		DockerHubUsername:  nullStringToVal(dockerHubUsername, ""),
+		DockerHubToken:     nullStringToVal(dockerHubToken, ""),
+		QuayToken:          nullStringToVal(quayToken, ""),
+		AcrUsername:        nullStringToVal(acrUsername, ""),
+		AcrPassword:        nullStringToVal(acrPassword, ""),
+		EcrAccessKeyId:     nullStringToVal(ecrAccessKeyId, ""),
+		EcrSecretAccessKey: nullStringToVal(ecrSecretAccessKey, ""),
+		EcrRegion:          nullStringToVal(ecrRegion, ""),
+		GarToken:           nullStringToVal(garToken, ""),
+	}, nil
+}
+
+func nullStringToVal(ns sql.NullString, def string) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return def
+}
+
+func nullIntToVal(ni sql.NullInt64, def int) int {
+	if ni.Valid {
+		return int(ni.Int64)
+	}
+	return def
+}
+
+func nullBoolToVal(nb sql.NullBool, def bool) bool {
+	if nb.Valid {
+		return nb.Bool
+	}
+	return def
 }
 
 func UpdateSettings(db *sql.DB, s *models.Settings) error {
