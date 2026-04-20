@@ -10,16 +10,14 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Build backend
-FROM golang:1.24-alpine AS backend-builder
+FROM golang:1.22-alpine AS backend-builder
 
 RUN apk add --no-cache gcc musl-dev sqlite-dev
 
 WORKDIR /app
 
-COPY app/go.mod app/go.sum ./
-RUN go mod download
-
 COPY app/ .
+RUN go mod tidy && go mod download
 RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/server
 
 # Stage 3: Runtime
