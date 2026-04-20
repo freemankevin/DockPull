@@ -16,8 +16,9 @@ RUN apk add --no-cache gcc musl-dev sqlite-dev
 
 WORKDIR /app
 
-COPY app/ .
+COPY app/go.mod app/go.sum ./
 RUN go mod download
+COPY app/ .
 RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/server
 
 # Stage 3: Runtime
