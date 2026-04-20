@@ -1,6 +1,6 @@
 module docker-pull-manager
 
-go 1.23
+go 1.24
 
 require (
 	github.com/docker/docker v20.10.24+incompatible
