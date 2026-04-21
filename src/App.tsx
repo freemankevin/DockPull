@@ -11,6 +11,7 @@ import { NotificationBell } from './context/NotificationBell'
 import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { LanguageProvider, useLanguage } from './context/LanguageContext'
+import { ConfigProvider } from './context/ConfigContext'
 import { UserMenu } from './context/UserMenu'
 import { DocLayout } from './docs'
 import {
@@ -176,11 +177,13 @@ function AppContent() {
   }
 
   return (
-    <ToastProvider>
-      <NotificationProvider>
-        <MainApp />
-      </NotificationProvider>
-    </ToastProvider>
+    <ConfigProvider>
+      <ToastProvider>
+        <NotificationProvider>
+          <MainApp />
+        </NotificationProvider>
+      </ToastProvider>
+    </ConfigProvider>
   )
 }
 

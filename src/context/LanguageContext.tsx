@@ -117,6 +117,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     'images.title': 'Images',
     'images.add': 'Add',
+    'images.loading': 'Loading images...',
     'images.table.image': 'Image',
     'images.table.platform': 'Platform',
     'images.table.status': 'Status',
@@ -337,6 +338,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     'images.title': '镜像',
     'images.add': '添加',
+    'images.loading': '加载镜像中...',
     'images.table.image': '镜像',
     'images.table.platform': '平台',
     'images.table.status': '状态',

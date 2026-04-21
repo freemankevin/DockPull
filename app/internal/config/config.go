@@ -3,21 +3,18 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"docker-pull-manager/internal/models"
 )
 
-// getProjectRoot returns the project root directory
+// getProjectRoot returns the working directory as project root
+// In Docker containers, this is /app; in development, use current directory
 func getProjectRoot() string {
-	// Get the directory of the current file
-	_, filename, _, _ := runtime.Caller(0)
-	// This file is in internal/config/, so go up 3 levels to get project root
-	dir := filepath.Dir(filename)
-	for i := 0; i < 3; i++ {
-		dir = filepath.Dir(dir)
+	wd, err := os.Getwd()
+	if err != nil {
+		return "."
 	}
-	return dir
+	return wd
 }
 
 // Config holds application configuration
@@ -93,21 +90,8 @@ func GetDataDir() string {
 }
 
 // GetDefaultExportPath returns the default export path
-// Priority: 1. Desktop/DockPull, 2. Project root/exports
+// In Docker containers, use /app/exports as default
 func GetDefaultExportPath() string {
-	home, err := os.UserHomeDir()
-	if err == nil && home != "" {
-		desktop := filepath.Join(home, "Desktop")
-		if runtime.GOOS == "windows" {
-			if _, err := os.Stat(desktop); err != nil {
-				desktop = filepath.Join(home, "桌面")
-			}
-		}
-		if _, err := os.Stat(desktop); err == nil {
-			exportPath := filepath.Join(desktop, "DockPull")
-			return exportPath
-		}
-	}
 	return filepath.Join(getProjectRoot(), "exports")
 }
 

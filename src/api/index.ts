@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:9238/api',
-  timeout: 30000,
+  baseURL: '/api',
+  timeout: 10000,
 })
 
 api.interceptors.request.use((config) => {
@@ -19,6 +19,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('dockpull_token')
       localStorage.removeItem('dockpull_user')
+      localStorage.removeItem('dockpull_config')
       window.location.href = '/login'
     }
     return Promise.reject(error)
@@ -26,7 +27,7 @@ api.interceptors.response.use(
 )
 
 export const authApi = {
-  login: (username: string, password: string) => axios.post('http://127.0.0.1:9238/api/auth/login', { username, password }),
+  login: (username: string, password: string) => axios.post('/api/auth/login', { username, password }),
   me: () => api.get('/auth/me'),
   changePassword: (oldPassword: string, newPassword: string) => api.post('/auth/change-password', { old_password: oldPassword, new_password: newPassword }),
 }
@@ -39,7 +40,7 @@ export const imagesApi = {
   pull: (id: number) => api.post(`/images/${id}/pull`),
   export: (id: number) => api.post(`/images/${id}/export`),
   logs: (id: number) => api.get(`/images/${id}/logs`),
-  checkPlatforms: (name: string, tag: string) => api.get(`/images/check-platforms`, { params: { name, tag } }),
+  checkPlatforms: (name: string, tag: string) => api.get('/images/check-platforms', { params: { name, tag } }),
 }
 
 export const configApi = {

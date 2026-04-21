@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { User, ArrowRightFromLine, Key, Bell, Save, FlaskConical, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
-import { useConfig } from '../hooks/useConfig'
+import { useConfig } from '../context/ConfigContext'
 import { useToast } from '../context/ToastContext'
 import { useLanguage } from '../context/LanguageContext'
 import { webhookApi, authApi } from '../api'

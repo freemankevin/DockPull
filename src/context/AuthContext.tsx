@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 
-const API_BASE = 'http://127.0.0.1:9238'
 const SESSION_TIMEOUT = 2 * 60 * 60 * 1000
 
 interface User {
@@ -49,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     localStorage.removeItem('dockpull_token')
     localStorage.removeItem('dockpull_user')
+    localStorage.removeItem('dockpull_config')
   }, [])
 
   useEffect(() => {
@@ -57,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       localStorage.removeItem('dockpull_user')
       localStorage.removeItem('dockpull_token')
+      localStorage.removeItem('dockpull_config')
     }
   }, [user])
 
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })

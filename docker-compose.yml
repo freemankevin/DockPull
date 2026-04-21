@@ -1,14 +1,14 @@
 services:
   app:
-    image: ${IMAGE:-ghcr.io/freemankevin/dockpull:latest}
+    image: ghcr.io/freemankevin/dockpull:latest
     build:
       context: .
     ports:
-      - "${PORT:-9238}:9238"
+      - "19238:9238"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${DATA_DIR:-./data}:/app/data
-      - ${EXPORTS_DIR:-./exports}:/app/exports
+      - ./data:/app/data
+      - ./exports:/app/exports
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - SERVER_HOST=0.0.0.0
