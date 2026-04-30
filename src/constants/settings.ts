@@ -29,6 +29,7 @@ export type TokenRegistryConfig = {
   fields: TokenRegistryField[]
   checkKeys: string[]
   hasCert?: boolean
+  requireTest?: boolean
 }
 
 export const TOKEN_REGISTRY_CONFIG_KEYS: Record<TokenRegistryId, TokenRegistryId> = {
@@ -57,20 +58,23 @@ export const TOKEN_REGISTRY_CONFIG: Record<TokenRegistryId, TokenRegistryConfig>
   ghcr: {
     id: 'ghcr',
     name: 'GitHub Container Registry (ghcr.io)',
-    hint: 'Personal access token with read:packages scope. Required even for public images.',
+    hint: 'Personal access token with read:packages scope. Both username and token are required. Token must belong to the specified GitHub user.',
     fields: [
+      { key: 'ghcr_username', placeholder: 'GitHub Username', type: 'text' },
       { key: 'ghcr_token', placeholder: 'ghp_xxxxxxxxxxxx', type: 'password' },
     ],
-    checkKeys: ['ghcr_token'],
+    checkKeys: ['ghcr_username', 'ghcr_token'],
+    requireTest: true,
   },
   quay: {
     id: 'quay',
     name: 'Quay.io',
-    hint: 'Access token for Quay.io registry. Create robot account or use OAuth token.',
+    hint: 'Red Hat account credentials for Quay.io registry. Use your Red Hat login (username + password). Optional for public images.',
     fields: [
-      { key: 'quay_token', placeholder: 'Quay access token', type: 'password' },
+      { key: 'quay_username', placeholder: 'Red Hat Username', type: 'text' },
+      { key: 'quay_password', placeholder: 'Red Hat Password', type: 'password' },
     ],
-    checkKeys: ['quay_token'],
+    checkKeys: ['quay_username', 'quay_password'],
   },
   acr: {
     id: 'acr',

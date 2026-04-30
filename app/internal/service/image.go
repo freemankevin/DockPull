@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -84,9 +85,32 @@ func (s *ImageService) ProcessPendingImages() {
 		return
 	}
 
-	for _, img := range images {
-		s.processImage(&img)
+	if len(images) == 0 {
+		return
 	}
+
+	concurrency := s.cfg.ConcurrentPulls
+	if concurrency < 1 {
+		concurrency = 1
+	}
+	if concurrency > len(images) {
+		concurrency = len(images)
+	}
+
+	sem := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+
+	for i := range images {
+		wg.Add(1)
+		go func(img *models.Image) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			s.processImage(img)
+		}(&images[i])
+	}
+
+	wg.Wait()
 }
 
 func (s *ImageService) processImage(img *models.Image) {

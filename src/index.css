@@ -1,4 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/HankenGrotesk-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  src: url('/fonts/NotoSansSC-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 800;
+  font-display: swap;
+}
 
 * {
   margin: 0;
@@ -83,24 +102,10 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  /* ── Typography (Luxury Style) ── */
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-serif: "Playfair Display", Georgia, serif;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
-  --font-code: "SF Mono", "Source Code Pro", monospace;
-  
+  /* ── Typography ── */
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
   --font-sans-zh: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-serif-zh: "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", serif;
-
-  /* ── Letter Spacing (Luxury Typography) ── */
-  --letter-spacing-heading: -0.04em;
-  --letter-spacing-title: -0.03em;
-  --letter-spacing-subtitle: -0.015em;
-  --letter-spacing-normal: -0.01em;
-  --letter-spacing-tight: -0.02em;
-  --letter-spacing-wide: 0.05em;
-  --letter-spacing-display: 0.02em;
 }
 
 [data-theme="dark"] {
@@ -161,11 +166,8 @@ body {
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.65;
-  letter-spacing: var(--letter-spacing-normal);
-  font-weight: 400;
 }
 
-/* Chinese text - use elegant sans fonts */
 :lang(zh-CN) body,
 [data-lang="zh"] body {
   font-family: var(--font-sans-zh);
@@ -175,49 +177,21 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   line-height: 1.2;
   color: var(--text-primary);
-  letter-spacing: var(--letter-spacing-heading);
 }
 
-/* English elegant heading font */
-:lang(en) h1,
-:lang(en) h2,
-:lang(en) h3,
-[data-lang="en"] h1,
-[data-lang="en"] h2,
-[data-lang="en"] h3 {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-/* Chinese elegant serif font for headings */
 :lang(zh-CN) h1,
 :lang(zh-CN) h2,
 :lang(zh-CN) h3,
 [data-lang="zh"] h1,
 [data-lang="zh"] h2,
 [data-lang="zh"] h3 {
-  font-family: var(--font-serif-zh);
-  letter-spacing: 0.05em;
+  font-family: var(--font-sans-zh);
 }
 
-h1 { 
-  font-size: 28px; 
-  font-weight: 600;
-}
-h2 { 
-  font-size: 22px; 
-  font-weight: 500;
-  letter-spacing: var(--letter-spacing-title);
-}
-h3 { 
-  font-size: 17px; 
-  font-weight: 500;
-}
-h4 { 
-  font-size: 14px; 
-  font-weight: 500;
-}
+h1 { font-size: 28px; font-weight: 600; }
+h2 { font-size: 22px; font-weight: 500; }
+h3 { font-size: 17px; font-weight: 500; }
+h4 { font-size: 14px; font-weight: 500; }
 
 /* ── Typography Utilities (Tailwind-style) ── */
 .text-h1 { font-size: var(--text-h1, 24px); }
@@ -280,196 +254,18 @@ code, kbd {
   background: var(--text-muted);
 }
 
-/* ── Elegant Font Utilities ── */
-.font-elegant {
-  font-family: var(--font-serif);
-  letter-spacing: 0.02em;
-}
-
-.font-elegant-zh {
-  font-family: var(--font-serif-zh);
-  letter-spacing: 0.05em;
-}
-
-.font-body {
-  font-family: var(--font-sans);
-}
-
-.font-body-zh {
-  font-family: var(--font-sans-zh);
-}
-
-/* Dynamic font based on language */
-[data-lang="zh"] .font-display,
-[data-lang="zh"] .page-header h1,
-[data-lang="zh"] .modal-header h2,
-[data-lang="zh"] .settings-page-title,
-[data-lang="zh"] .settings-sidebar-title {
-  font-family: var(--font-serif-zh);
-  letter-spacing: 0.05em;
-}
-
-[data-lang="en"] .font-display,
-[data-lang="en"] .page-header h1,
-[data-lang="en"] .modal-header h2,
-[data-lang="en"] .settings-page-title,
-[data-lang="en"] .settings-sidebar-title {
-  font-family: var(--font-serif);
-  letter-spacing: 0.02em;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   Global Luxury Font Configuration (All text uses luxury fonts)
-   ═══════════════════════════════════════════════════════════ */
-
-/* English: All text uses Playfair Display (luxury serif) */
-:lang(en) *,
-:lang(en) *::before,
-:lang(en) *::after {
-  font-family: var(--font-serif);
-}
-
-/* English Headings */
-:lang(en) h1, :lang(en) h2, :lang(en) h3, :lang(en) h4, :lang(en) h5, :lang(en) h6 {
-  font-family: var(--font-serif);
-  letter-spacing: 0.02em;
-}
-
-/* Chinese: All text uses Noto Serif SC (luxury serif) */
-:lang(zh) *,
-:lang(zh) *::before,
-:lang(zh) *::after,
-:lang(zh-CN) *,
-:lang(zh-CN) *::before,
-:lang(zh-CN) *::after {
-  font-family: var(--font-serif-zh);
-}
-
-/* Chinese Headings */
-:lang(zh) h1, :lang(zh) h2, :lang(zh) h3, :lang(zh) h4, :lang(zh) h5, :lang(zh) h6,
-:lang(zh-CN) h1, :lang(zh-CN) h2, :lang(zh-CN) h3, :lang(zh-CN) h4, :lang(zh-CN) h5, :lang(zh-CN) h6 {
-  font-family: var(--font-serif-zh);
-  letter-spacing: 0.05em;
-}
-
-/* Numbers: Use luxury font with tabular-nums for alignment */
-:lang(en) .stat-value,
-:lang(en) .badge,
-:lang(en) time,
-:lang(en) .timestamp,
-:lang(en) [class*="time"],
-:lang(en) td:nth-child(6),
-:lang(en) td:first-child,
-:lang(en) .platform-badge,
-:lang(en) .empty-state-tag {
-  font-variant-numeric: tabular-nums;
-}
-
-:lang(zh) .stat-value,
-:lang(zh) .badge,
-:lang(zh) time,
-:lang(zh) .timestamp,
-:lang(zh) [class*="time"],
-:lang(zh) td:nth-child(6),
-:lang(zh) td:first-child,
-:lang(zh) .platform-badge,
-:lang(zh) .empty-state-tag {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Preserve monospace for code elements */
-:lang(en) code, :lang(en) kbd, :lang(en) pre, :lang(en) .font-mono,
-:lang(zh) code, :lang(zh) kbd, :lang(zh) pre, :lang(zh) .font-mono {
+code, kbd, pre, .font-mono {
   font-family: var(--font-mono);
 }
 
-/* Form controls - luxury fonts */
-:lang(en) input, :lang(en) textarea, :lang(en) select, :lang(en) button {
-  font-family: var(--font-serif);
+[data-lang="zh"] * {
+  font-family: var(--font-sans-zh);
 }
 
-:lang(zh) input, :lang(zh) textarea, :lang(zh) select, :lang(zh) button {
-  font-family: var(--font-serif-zh);
-}
-
-/* Table elements - default luxury */
-:lang(en) th, :lang(en) td {
-  font-family: var(--font-serif);
-}
-
-:lang(zh) th, :lang(zh) td {
-  font-family: var(--font-serif-zh);
-}
-
-/* Label and span elements */
-:lang(en) label, :lang(en) span, :lang(en) div {
-  font-family: var(--font-serif);
-}
-
-:lang(zh) label, :lang(zh) span, :lang(zh) div {
-  font-family: var(--font-serif-zh);
-}
-
-/* Data attributes support */
-[data-lang="en"] *,
-[data-lang="en"] *::before,
-[data-lang="en"] *::after {
-  font-family: var(--font-serif);
-}
-
-[data-lang="zh"] *,
-[data-lang="zh"] *::before,
-[data-lang="zh"] *::after {
-  font-family: var(--font-serif-zh);
-}
-
-/* Numbers & Data - Use luxury font with tabular-nums */
 .font-numeric {
   font-variant-numeric: tabular-nums;
 }
 
-/* Top bar date/time - use luxury font */
-.top-bar,
-.top-bar-date,
-.app-layout .top-bar .top-bar-date {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Table cells with dates/times */
-td time,
-td .timestamp,
-td[data-type="date"],
-td[data-type="time"],
-.table tbody tr td:first-child,
-.table tbody tr td:nth-child(6),
-.table td {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Status badges and counts */
-.badge,
-.stat-value,
-.stat-title,
-.platform-badge,
-.empty-state-tag,
-.notif-panel-count,
-.notif-badge {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Image names and technical content - luxury font */
-.image-name,
-.image-tag,
-td code,
-.table td:first-child,
-.version-text,
-.registry-name,
-.content-center .table .image-name {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-/* Selection styling */
 ::selection {
   background: rgba(139, 92, 246, 0.2);
   color: inherit;
@@ -477,12 +273,4 @@ td code,
 
 [data-theme="dark"] ::selection {
   background: rgba(139, 92, 246, 0.3);
-}
-
-[data-theme="dark"] .fa-brands.fa-github {
-  color: #f0f0f0;
-}
-
-[data-theme="light"] .fa-brands.fa-github {
-  color: #181717;
 }

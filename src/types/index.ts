@@ -32,16 +32,27 @@ export interface Config {
   concurrent_pulls: number
   default_platform: string
   gzip_compression: number
+  container_runtime: string
   ghcr_token: string
+  ghcr_username: string
   dockerhub_username: string
   dockerhub_token: string
-  quay_token: string
+  quay_username: string
+  quay_password: string
   acr_username: string
   acr_password: string
   ecr_access_key_id: string
   ecr_secret_access_key: string
   ecr_region: string
   gar_token: string
+  harbor_url: string
+  harbor_username: string
+  harbor_password: string
+  harbor_tls_cert: string
+  tencentcloud_username: string
+  tencentcloud_password: string
+  huaweicloud_username: string
+  huaweicloud_password: string
 }
 
 export interface CreateImageRequest {

@@ -1326,7 +1326,7 @@ body, * {
   border-radius: var(--radius-card);
   font-size: 14px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   line-height: 1.5;
   letter-spacing: var(--letter-spacing-normal);
@@ -1346,7 +1346,8 @@ body, * {
 }
 
 .form-control::placeholder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 .form-row {

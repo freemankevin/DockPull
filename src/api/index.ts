@@ -58,6 +58,10 @@ export const webhookApi = {
   test: () => api.post('/webhook/test'),
 }
 
+export const tokenApi = {
+  test: (registry: string, credentials?: { username?: string; password?: string; token?: string; cert?: string; region?: string; url?: string }) => api.post('/tokens/test', { registry, ...credentials }),
+}
+
 export const statsApi = {
   get: () => api.get('/stats'),
 }

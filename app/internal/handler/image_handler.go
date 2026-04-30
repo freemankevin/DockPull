@@ -208,26 +208,19 @@ func (h *Handler) checkRegistryAuth(registry string) gin.H {
 
 	switch registry {
 	case "ghcr.io":
-		result["needs_auth"] = true
-		result["auth_type"] = "ghcr_token"
 		if h.cfg.GhcrToken != "" {
 			result["has_auth"] = true
-		} else {
-			result["suggestion"] = "Please configure GHCR Token in Settings > Tokens"
+			result["auth_type"] = "ghcr"
 		}
 	case "docker.io", "registry.hub.docker.com":
 		if h.cfg.DockerHubUsername != "" && h.cfg.DockerHubToken != "" {
 			result["has_auth"] = true
-			result["needs_auth"] = true
 			result["auth_type"] = "dockerhub"
 		}
 	case "quay.io":
-		result["needs_auth"] = true
-		result["auth_type"] = "quay_token"
-		if h.cfg.QuayToken != "" {
+		if h.cfg.QuayUsername != "" && h.cfg.QuayPassword != "" {
 			result["has_auth"] = true
-		} else {
-			result["suggestion"] = "Please configure Quay Token in Settings > Tokens"
+			result["auth_type"] = "quay"
 		}
 	default:
 		if strings.Contains(registry, "azurecr.io") {
@@ -238,13 +231,18 @@ func (h *Handler) checkRegistryAuth(registry string) gin.H {
 			} else {
 				result["suggestion"] = "Please configure Azure Container Registry credentials in Settings > Tokens"
 			}
-		} else if strings.HasSuffix(registry, ".amazonaws.com") || strings.HasPrefix(registry, "public.ecr.aws") {
+		} else if strings.HasSuffix(registry, ".amazonaws.com") {
 			result["needs_auth"] = true
 			result["auth_type"] = "ecr"
 			if h.cfg.EcrAccessKeyId != "" && h.cfg.EcrSecretAccessKey != "" {
 				result["has_auth"] = true
 			} else {
 				result["suggestion"] = "Please configure AWS ECR credentials in Settings > Tokens"
+			}
+		} else if strings.HasPrefix(registry, "public.ecr.aws") {
+			if h.cfg.EcrAccessKeyId != "" && h.cfg.EcrSecretAccessKey != "" {
+				result["has_auth"] = true
+				result["auth_type"] = "ecr"
 			}
 		} else if strings.HasSuffix(registry, ".pkg.dev") || strings.HasPrefix(registry, "asia-east1-docker.pkg.dev") {
 			result["needs_auth"] = true

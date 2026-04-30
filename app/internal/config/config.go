@@ -32,23 +32,34 @@ type Config struct {
 	DefaultPlatform      string `json:"default_platform"`
 	GzipCompression      int    `json:"gzip_compression"`
 	GhcrToken            string `json:"ghcr_token"`
+	GhcrUsername         string `json:"ghcr_username"`
+	GhcrVerified         bool   `json:"ghcr_verified"`
 	DockerHubUsername    string `json:"dockerhub_username"`
 	DockerHubToken       string `json:"dockerhub_token"`
-	QuayToken            string `json:"quay_token"`
+	DockerHubVerified    bool   `json:"dockerhub_verified"`
+	QuayUsername         string `json:"quay_username"`
+	QuayPassword         string `json:"quay_password"`
+	QuayVerified         bool   `json:"quay_verified"`
 	AcrUsername          string `json:"acr_username"`
 	AcrPassword          string `json:"acr_password"`
+	AcrVerified          bool   `json:"acr_verified"`
 	EcrAccessKeyId       string `json:"ecr_access_key_id"`
 	EcrSecretAccessKey   string `json:"ecr_secret_access_key"`
 	EcrRegion            string `json:"ecr_region"`
+	EcrVerified          bool   `json:"ecr_verified"`
 	GarToken             string `json:"gar_token"`
+	GarVerified          bool   `json:"gar_verified"`
 	HarborUrl            string `json:"harbor_url"`
 	HarborUsername       string `json:"harbor_username"`
 	HarborPassword       string `json:"harbor_password"`
 	HarborTlsCert        string `json:"harbor_tls_cert"`
+	HarborVerified       bool   `json:"harbor_verified"`
 	TencentcloudUsername string `json:"tencentcloud_username"`
 	TencentcloudPassword string `json:"tencentcloud_password"`
+	TencentcloudVerified bool   `json:"tencentcloud_verified"`
 	HuaweicloudUsername  string `json:"huaweicloud_username"`
 	HuaweicloudPassword  string `json:"huaweicloud_password"`
+	HuaweicloudVerified  bool   `json:"huaweicloud_verified"`
 	ContainerRuntime     string `json:"container_runtime"`
 }
 
@@ -81,23 +92,34 @@ func FromSettings(s *models.Settings) *Config {
 		DefaultPlatform:      s.DefaultPlatform,
 		GzipCompression:      s.GzipCompression,
 		GhcrToken:            s.GhcrToken,
+		GhcrUsername:         s.GhcrUsername,
+		GhcrVerified:         s.GhcrVerified,
 		DockerHubUsername:    s.DockerHubUsername,
 		DockerHubToken:       s.DockerHubToken,
-		QuayToken:            s.QuayToken,
+		DockerHubVerified:    s.DockerHubVerified,
+		QuayUsername:         s.QuayUsername,
+		QuayPassword:         s.QuayPassword,
+		QuayVerified:         s.QuayVerified,
 		AcrUsername:          s.AcrUsername,
 		AcrPassword:          s.AcrPassword,
+		AcrVerified:          s.AcrVerified,
 		EcrAccessKeyId:       s.EcrAccessKeyId,
 		EcrSecretAccessKey:   s.EcrSecretAccessKey,
 		EcrRegion:            s.EcrRegion,
+		EcrVerified:          s.EcrVerified,
 		GarToken:             s.GarToken,
+		GarVerified:          s.GarVerified,
 		HarborUrl:            s.HarborUrl,
 		HarborUsername:       s.HarborUsername,
 		HarborPassword:       s.HarborPassword,
 		HarborTlsCert:        s.HarborTlsCert,
+		HarborVerified:       s.HarborVerified,
 		TencentcloudUsername: s.TencentcloudUsername,
 		TencentcloudPassword: s.TencentcloudPassword,
+		TencentcloudVerified: s.TencentcloudVerified,
 		HuaweicloudUsername:  s.HuaweicloudUsername,
 		HuaweicloudPassword:  s.HuaweicloudPassword,
+		HuaweicloudVerified:  s.HuaweicloudVerified,
 		ContainerRuntime:     s.ContainerRuntime,
 	}
 }

@@ -54,6 +54,10 @@ func (s *DockerService) getClient() (*client.Client, error) {
 	return s.cli, s.cliErr
 }
 
+func (s *DockerService) GetClient() (*client.Client, error) {
+	return s.getClient()
+}
+
 func detectPodmanSocket() string {
 	if runtime.GOOS == "windows" {
 		npipeHost := "npipe:////./pipe/podman-machine-default"
@@ -116,8 +120,12 @@ func (s *DockerService) PullImage(ctx context.Context, fullName, platform string
 func (s *DockerService) getAuthConfigForRegistry(registry string) *types.AuthConfig {
 	switch {
 	case registry == "ghcr.io" && s.cfg.GhcrToken != "":
+		username := "oauth2"
+		if s.cfg.GhcrUsername != "" {
+			username = s.cfg.GhcrUsername
+		}
 		return &types.AuthConfig{
-			Username:      "oauth2",
+			Username:      username,
 			Password:      s.cfg.GhcrToken,
 			ServerAddress: "ghcr.io",
 		}
@@ -129,11 +137,13 @@ func (s *DockerService) getAuthConfigForRegistry(registry string) *types.AuthCon
 				ServerAddress: "https://index.docker.io/v1/",
 			}
 		}
-	case registry == "quay.io" && s.cfg.QuayToken != "":
-		return &types.AuthConfig{
-			Username:      "oauth2",
-			Password:      s.cfg.QuayToken,
-			ServerAddress: "quay.io",
+	case registry == "quay.io":
+		if s.cfg.QuayUsername != "" && s.cfg.QuayPassword != "" {
+			return &types.AuthConfig{
+				Username:      s.cfg.QuayUsername,
+				Password:      s.cfg.QuayPassword,
+				ServerAddress: "quay.io",
+			}
 		}
 	case strings.HasSuffix(registry, ".azurecr.io"):
 		if s.cfg.AcrUsername != "" && s.cfg.AcrPassword != "" {

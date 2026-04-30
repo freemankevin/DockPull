@@ -2,11 +2,21 @@ package database
 
 import (
 	"database/sql"
+	"runtime"
 	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
 )
+
+func getDefaultConcurrentPulls() int {
+	cpus := runtime.NumCPU()
+	concurrency := cpus - 2
+	if concurrency < 1 {
+		concurrency = 1
+	}
+	return concurrency
+}
 
 func Init(dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", dbPath+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
@@ -33,7 +43,9 @@ func migrateDatabase(db *sql.DB) error {
 	columns := []string{
 		"dockerhub_username TEXT DEFAULT ''",
 		"dockerhub_token TEXT DEFAULT ''",
-		"quay_token TEXT DEFAULT ''",
+		"ghcr_username TEXT DEFAULT ''",
+		"quay_username TEXT DEFAULT ''",
+		"quay_password TEXT DEFAULT ''",
 		"acr_username TEXT DEFAULT ''",
 		"acr_password TEXT DEFAULT ''",
 		"ecr_access_key_id TEXT DEFAULT ''",
@@ -49,6 +61,15 @@ func migrateDatabase(db *sql.DB) error {
 		"huaweicloud_username TEXT DEFAULT ''",
 		"huaweicloud_password TEXT DEFAULT ''",
 		"container_runtime TEXT DEFAULT 'docker'",
+		"ghcr_verified BOOLEAN DEFAULT 0",
+		"dockerhub_verified BOOLEAN DEFAULT 0",
+		"quay_verified BOOLEAN DEFAULT 0",
+		"acr_verified BOOLEAN DEFAULT 0",
+		"ecr_verified BOOLEAN DEFAULT 0",
+		"gar_verified BOOLEAN DEFAULT 0",
+		"harbor_verified BOOLEAN DEFAULT 0",
+		"tencentcloud_verified BOOLEAN DEFAULT 0",
+		"huaweicloud_verified BOOLEAN DEFAULT 0",
 	}
 
 	for _, column := range columns {
@@ -118,9 +139,11 @@ func createTables(db *sql.DB) error {
 			default_platform TEXT DEFAULT 'linux/amd64,linux/arm64',
 			gzip_compression INTEGER DEFAULT 9,
 			ghcr_token TEXT DEFAULT '',
+			ghcr_username TEXT DEFAULT '',
 			dockerhub_username TEXT DEFAULT '',
 			dockerhub_token TEXT DEFAULT '',
-			quay_token TEXT DEFAULT '',
+			quay_username TEXT DEFAULT '',
+			quay_password TEXT DEFAULT '',
 			acr_username TEXT DEFAULT '',
 			acr_password TEXT DEFAULT '',
 			ecr_access_key_id TEXT DEFAULT '',
@@ -140,7 +163,7 @@ func createTables(db *sql.DB) error {
 		}
 	}
 
-	_, _ = db.Exec(`INSERT OR IGNORE INTO settings (id, export_path, retry_max_attempts, retry_interval_sec, enable_webhook, webhook_url, webhook_type, concurrent_pulls, default_platform, gzip_compression, ghcr_token, dockerhub_username, dockerhub_token, quay_token, acr_username, acr_password, ecr_access_key_id, ecr_secret_access_key, ecr_region, gar_token) VALUES (1, '', 0, 30, 0, '', 'dingtalk', 3, 'linux/amd64,linux/arm64', 9, '', '', '', '', '', '', '', '', '', '')`)
+	_, _ = db.Exec(`INSERT OR IGNORE INTO settings (id, export_path, retry_max_attempts, retry_interval_sec, enable_webhook, webhook_url, webhook_type, concurrent_pulls, default_platform, gzip_compression, ghcr_token, ghcr_username, dockerhub_username, dockerhub_token, quay_username, quay_password, acr_username, acr_password, ecr_access_key_id, ecr_secret_access_key, ecr_region, gar_token) VALUES (1, '', 0, 30, 0, '', 'dingtalk', ?, 'linux/amd64,linux/arm64', 9, '', '', '', '', '', '', '', '', '', '', '')`, getDefaultConcurrentPulls())
 
 	return nil
 }

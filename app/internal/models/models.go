@@ -62,23 +62,34 @@ type UpdateConfigRequest struct {
 	DefaultPlatform      string `json:"default_platform"`
 	GzipCompression      int    `json:"gzip_compression"`
 	GhcrToken            string `json:"ghcr_token"`
+	GhcrUsername         string `json:"ghcr_username"`
+	GhcrVerified         bool   `json:"ghcr_verified"`
 	DockerHubUsername    string `json:"dockerhub_username"`
 	DockerHubToken       string `json:"dockerhub_token"`
-	QuayToken            string `json:"quay_token"`
+	DockerHubVerified    bool   `json:"dockerhub_verified"`
+	QuayUsername         string `json:"quay_username" db:"quay_username"`
+	QuayPassword         string `json:"quay_password" db:"quay_password"`
+	QuayVerified         bool   `json:"quay_verified"`
 	AcrUsername          string `json:"acr_username"`
 	AcrPassword          string `json:"acr_password"`
+	AcrVerified          bool   `json:"acr_verified"`
 	EcrAccessKeyId       string `json:"ecr_access_key_id"`
 	EcrSecretAccessKey   string `json:"ecr_secret_access_key"`
 	EcrRegion            string `json:"ecr_region"`
+	EcrVerified          bool   `json:"ecr_verified"`
 	GarToken             string `json:"gar_token"`
+	GarVerified          bool   `json:"gar_verified"`
 	HarborUrl            string `json:"harbor_url"`
 	HarborUsername       string `json:"harbor_username"`
 	HarborPassword       string `json:"harbor_password"`
 	HarborTlsCert        string `json:"harbor_tls_cert"`
+	HarborVerified       bool   `json:"harbor_verified"`
 	TencentcloudUsername string `json:"tencentcloud_username"`
 	TencentcloudPassword string `json:"tencentcloud_password"`
+	TencentcloudVerified bool   `json:"tencentcloud_verified"`
 	HuaweicloudUsername  string `json:"huaweicloud_username"`
 	HuaweicloudPassword  string `json:"huaweicloud_password"`
+	HuaweicloudVerified  bool   `json:"huaweicloud_verified"`
 	ContainerRuntime     string `json:"container_runtime"`
 }
 
@@ -93,23 +104,34 @@ type Settings struct {
 	DefaultPlatform      string `json:"default_platform" db:"default_platform"`
 	GzipCompression      int    `json:"gzip_compression" db:"gzip_compression"`
 	GhcrToken            string `json:"ghcr_token" db:"ghcr_token"`
+	GhcrUsername         string `json:"ghcr_username" db:"ghcr_username"`
+	GhcrVerified         bool   `json:"ghcr_verified" db:"ghcr_verified"`
 	DockerHubUsername    string `json:"dockerhub_username" db:"dockerhub_username"`
 	DockerHubToken       string `json:"dockerhub_token" db:"dockerhub_token"`
-	QuayToken            string `json:"quay_token" db:"quay_token"`
+	DockerHubVerified    bool   `json:"dockerhub_verified" db:"dockerhub_verified"`
+	QuayUsername         string `json:"quay_username" db:"quay_username"`
+	QuayPassword         string `json:"quay_password" db:"quay_password"`
+	QuayVerified         bool   `json:"quay_verified" db:"quay_verified"`
 	AcrUsername          string `json:"acr_username" db:"acr_username"`
 	AcrPassword          string `json:"acr_password" db:"acr_password"`
+	AcrVerified          bool   `json:"acr_verified" db:"acr_verified"`
 	EcrAccessKeyId       string `json:"ecr_access_key_id" db:"ecr_access_key_id"`
 	EcrSecretAccessKey   string `json:"ecr_secret_access_key" db:"ecr_secret_access_key"`
 	EcrRegion            string `json:"ecr_region" db:"ecr_region"`
+	EcrVerified          bool   `json:"ecr_verified" db:"ecr_verified"`
 	GarToken             string `json:"gar_token" db:"gar_token"`
+	GarVerified          bool   `json:"gar_verified" db:"gar_verified"`
 	HarborUrl            string `json:"harbor_url" db:"harbor_url"`
 	HarborUsername       string `json:"harbor_username" db:"harbor_username"`
 	HarborPassword       string `json:"harbor_password" db:"harbor_password"`
 	HarborTlsCert        string `json:"harbor_tls_cert" db:"harbor_tls_cert"`
+	HarborVerified       bool   `json:"harbor_verified" db:"harbor_verified"`
 	TencentcloudUsername string `json:"tencentcloud_username" db:"tencentcloud_username"`
 	TencentcloudPassword string `json:"tencentcloud_password" db:"tencentcloud_password"`
+	TencentcloudVerified bool   `json:"tencentcloud_verified" db:"tencentcloud_verified"`
 	HuaweicloudUsername  string `json:"huaweicloud_username" db:"huaweicloud_username"`
 	HuaweicloudPassword  string `json:"huaweicloud_password" db:"huaweicloud_password"`
+	HuaweicloudVerified  bool   `json:"huaweicloud_verified" db:"huaweicloud_verified"`
 	ContainerRuntime     string `json:"container_runtime" db:"container_runtime"`
 }
 

@@ -208,6 +208,7 @@ func main() {
 		api.GET("/config/detect-runtime", h.DetectRuntime)
 		api.GET("/browse", h.BrowseDirectory)
 		api.POST("/webhook/test", h.TestWebhook)
+		api.POST("/tokens/test", h.TestTokenAuth)
 		api.GET("/stats", h.GetStats)
 	}
 	stepStart = logStep("配置路由", stepStart)

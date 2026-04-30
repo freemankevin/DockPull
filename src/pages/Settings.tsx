@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { User, ArrowRightFromLine, Key, Bell, Save, FlaskConical, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useConfig } from '../context/ConfigContext'
 import { useToast } from '../context/ToastContext'
@@ -6,7 +6,7 @@ import { useLanguage } from '../context/LanguageContext'
 import { useNavigationGuard } from '../context/NavigationGuardContext'
 import { webhookApi, authApi } from '../api'
 import DirectoryPicker from '../components/DirectoryPicker'
-import { TabId, TAB_TITLE_KEYS, TOKEN_REGISTRY_CONFIG_KEYS, TokenRegistryId } from '../constants/settings'
+import { TabId, TAB_TITLE_KEYS, TOKEN_REGISTRY_CONFIG_KEYS, TOKEN_REGISTRY_CONFIG, TokenRegistryId } from '../constants/settings'
 import ExportSettings from './settings/ExportSettings'
 import AccountSettings from './settings/AccountSettings'
 import TokenSettings from './settings/TokenSettings'
@@ -18,7 +18,7 @@ export default function Settings() {
   const { t } = useLanguage()
   const { setHasUnsavedChanges, onSaveHandler } = useNavigationGuard()
   const [saving, setSaving] = useState(false)
-  const [formData, setFormData] = useState<any>({})
+  const [formData, setFormData] = useState<Record<string, string | number | boolean>>({})
   const [activeTab, setActiveTab] = useState<TabId>('account')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
@@ -27,6 +27,7 @@ export default function Settings() {
   const [showPasswords, setShowPasswords] = useState({ old: false, new: false, confirm: false })
   const [visibleTokens, setVisibleTokens] = useState<TokenRegistryId[]>([])
   const [showAddToken, setShowAddToken] = useState(false)
+  const [verifiedTokens, setVerifiedTokens] = useState<Record<TokenRegistryId, boolean>>({} as Record<TokenRegistryId, boolean>)
 
   const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: 'account', label: t('settings.tab.account'),  icon: <User size={16} /> },
@@ -35,13 +36,13 @@ export default function Settings() {
     { id: 'webhook', label: t('settings.tab.webhook'),  icon: <Bell size={16} /> },
   ]
 
-  const getValue = (key: string) => formData[key] ?? config?.[key as keyof typeof config]
+  const getValue = (key: string) => formData[key] ?? (config as Record<string, any>)?.[key]
 
-  const hasTokenConfig = (tokenId: TokenRegistryId) => {
+  const hasTokenConfig = (tokenId: TokenRegistryId, configData?: any) => {
     const checkKeysMap: Record<TokenRegistryId, string[]> = {
       dockerhub: ['dockerhub_username', 'dockerhub_token'],
-      ghcr: ['ghcr_token'],
-      quay: ['quay_token'],
+      ghcr: ['ghcr_username', 'ghcr_token'],
+      quay: ['quay_username', 'quay_password'],
       acr: ['acr_username', 'acr_password'],
       ecr: ['ecr_access_key_id', 'ecr_secret_access_key'],
       gar: ['gar_token'],
@@ -51,21 +52,83 @@ export default function Settings() {
     }
     const checkKeys = checkKeysMap[tokenId]
     if (!checkKeys) return false
+    const data = configData || config
     return checkKeys.some(key => {
-      const value = getValue(key)
-      return value && value.trim() !== ''
+      const value = (data as Record<string, any>)?.[key]
+      return value && String(value).trim() !== ''
     })
   }
 
-  useEffect(() => {
-    if (config && visibleTokens.length === 0) {
-      const configuredTokens = (Object.keys(TOKEN_REGISTRY_CONFIG_KEYS) as TokenRegistryId[]).filter(id => hasTokenConfig(id))
+  const updateVisibleTokensFromConfig = useCallback(() => {
+    if (config) {
+      const configuredTokens = (Object.keys(TOKEN_REGISTRY_CONFIG_KEYS) as TokenRegistryId[]).filter(id => hasTokenConfig(id, config))
       setVisibleTokens(configuredTokens)
+      
+      const initialVerified: Record<TokenRegistryId, boolean> = {} as Record<TokenRegistryId, boolean>
+      const verifiedFields: Record<TokenRegistryId, string> = {
+        dockerhub: 'dockerhub_verified',
+        ghcr: 'ghcr_verified',
+        quay: 'quay_verified',
+        acr: 'acr_verified',
+        ecr: 'ecr_verified',
+        gar: 'gar_verified',
+        harbor: 'harbor_verified',
+        tencentcloud: 'tencentcloud_verified',
+        huaweicloud: 'huaweicloud_verified',
+      }
+      for (const tokenId of configuredTokens) {
+        const field = verifiedFields[tokenId]
+        if (field && (config as Record<string, any>)?.[field]) {
+          initialVerified[tokenId] = true
+        }
+      }
+      setVerifiedTokens(initialVerified)
     }
+  }, [config])
+
+  useEffect(() => {
+    updateVisibleTokensFromConfig()
   }, [config])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (activeTab === 'tokens') {
+      for (const tokenId of visibleTokens) {
+        const registry = TOKEN_REGISTRY_CONFIG[tokenId]
+        if (!registry?.requireTest) continue
+        
+        const fields = registry.checkKeys
+        const hasValue = fields.some(key => {
+          const val = formData[key] !== undefined ? formData[key] : (config as Record<string, any>)?.[key]
+          return val && String(val).trim() !== ''
+        })
+        
+        if (hasValue && !verifiedTokens[tokenId]) {
+          showToast('error', t('settings.tokens.mustVerifyFirst') + ': ' + registry.name)
+          return
+        }
+      }
+      
+      const verifiedFields: Record<TokenRegistryId, string> = {
+        dockerhub: 'dockerhub_verified',
+        ghcr: 'ghcr_verified',
+        quay: 'quay_verified',
+        acr: 'acr_verified',
+        ecr: 'ecr_verified',
+        gar: 'gar_verified',
+        harbor: 'harbor_verified',
+        tencentcloud: 'tencentcloud_verified',
+        huaweicloud: 'huaweicloud_verified',
+      }
+      for (const tokenId of visibleTokens) {
+        const field = verifiedFields[tokenId]
+        if (field) {
+          formData[field] = verifiedTokens[tokenId] || false
+        }
+      }
+    }
+    
     setSaving(true)
     setSaveStatus('saving')
     try {
@@ -189,7 +252,7 @@ export default function Settings() {
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onSelect={handleSelectDir}
-        initialPath={getValue('export_path') || '.'}
+        initialPath={String(getValue('export_path') || '.')}
       />
 
       <aside className="settings-sidebar">
@@ -238,11 +301,14 @@ export default function Settings() {
             {activeTab === 'tokens' && (
               <TokenSettings
                 getValue={getValue}
+                formData={formData}
                 setFormData={setFormData}
                 visibleTokens={visibleTokens}
                 setVisibleTokens={setVisibleTokens}
                 showAddToken={showAddToken}
                 setShowAddToken={setShowAddToken}
+                verifiedTokens={verifiedTokens}
+                setVerifiedTokens={setVerifiedTokens}
               />
             )}
 
