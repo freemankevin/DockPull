@@ -21,7 +21,8 @@
   --font-serif: "Playfair Display", Georgia, serif;
   --font-serif-zh: "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", "Cascadia Code", monospace;
-  --radius-card: 8px;
+  --radius-card: 10px;
+  --radius-sm: 6px;
   --radius-xs: 4px;
 }
 

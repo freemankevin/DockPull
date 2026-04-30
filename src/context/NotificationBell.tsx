@@ -18,23 +18,6 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Railway-style: colored dot indicator per type
-  const getStatusDot = (type: string) => {
-    const colorMap: Record<string, string> = {
-      success: 'var(--green-500)',
-      error:   'var(--red-500)',
-      warning: 'var(--yellow-500)',
-      info:    'var(--blue-500)',
-    }
-    return (
-      <span
-        className="notif-status-dot"
-        style={{ background: colorMap[type] ?? colorMap.info }}
-      />
-    )
-  }
-
-  // Railway-style: icon per type, no background box
   const getTypeIcon = (type: string) => {
     const props = { size: 15, strokeWidth: 2 }
     switch (type) {
@@ -125,15 +108,6 @@ export function NotificationBell() {
                   role="listitem"
                   style={{ animationDelay: `${idx * 30}ms` }}
                 >
-                  {/* Left: status dot */}
-                  <div className="notif-item-dot-col">
-                    {getStatusDot(n.type)}
-                    {idx < notifications.length - 1 && (
-                      <span className="notif-item-connector" />
-                    )}
-                  </div>
-
-                  {/* Center: icon + content */}
                   <div className="notif-item-body">
                     <div className="notif-item-header-row">
                       <span className="notif-item-icon">{getTypeIcon(n.type)}</span>
@@ -143,7 +117,6 @@ export function NotificationBell() {
                     <p className="notif-item-message">{n.message}</p>
                   </div>
 
-                  {/* Right: dismiss */}
                   <button
                     className="notif-item-dismiss"
                     onClick={() => removeNotification(n.id)}

@@ -90,7 +90,7 @@ export default function Logs() {
           {!loading && filtered.length > 0 && (
             <span style={{
               background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)',
-              color: 'var(--text-tertiary)', borderRadius: '20px',
+              color: 'var(--text-tertiary)', borderRadius: 'var(--radius-card)',
               padding: '2px 8px', fontSize: '12px', fontWeight: 500,
             }}>{filtered.length}</span>
           )}

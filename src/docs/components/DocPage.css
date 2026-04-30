@@ -226,7 +226,7 @@
   top: 8px;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-xs);
   background: var(--purple-500);
 }
 
@@ -313,7 +313,7 @@
   top: 8px;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-xs);
   background: var(--purple-500);
 }
 
@@ -1229,7 +1229,7 @@ pre[class*="language-"] {
 .doc-step-number {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: var(--radius-card);
   background: var(--purple-600);
   color: white;
   display: flex;
@@ -1281,7 +1281,7 @@ pre[class*="language-"] {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   font-size: 12px;
   font-weight: 500;
   border: 1px solid;

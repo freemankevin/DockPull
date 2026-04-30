@@ -1,6 +1,7 @@
-import { Package, Settings, BarChart3, Terminal, ArrowUpRight, MessageSquare } from 'lucide-react'
+import { Package, Settings, BarChart3, Terminal, ArrowUpRight, MessageSquare, HardDrive } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
 import Images from './pages/Images'
+import LocalImages from './pages/LocalImages'
 import SettingsPage from './pages/Settings'
 import Stats from './pages/Stats'
 import Logs from './pages/Logs'
@@ -13,6 +14,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { LanguageProvider, useLanguage } from './context/LanguageContext'
 import { ConfigProvider } from './context/ConfigContext'
 import { UserMenu } from './context/UserMenu'
+import { NavigationGuardProvider } from './context/NavigationGuardContext'
 import { DocLayout } from './docs'
 import {
   Introduction,
@@ -42,25 +44,31 @@ function MainApp() {
 
         <ul className="nav-links">
           <li className="nav-top-divider">
-            <NavLink to="/stats">
+<NavLink to="/stats">
               <BarChart3 size={18} strokeWidth={1.75} />
               <span>{t('nav.overview')}</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/" end>
+<NavLink to="/" end>
               <Package size={18} strokeWidth={1.75} />
               <span>{t('nav.images')}</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/logs">
+<NavLink to="/local-images">
+              <HardDrive size={18} strokeWidth={1.75} />
+              <span>{t('nav.localImages')}</span>
+            </NavLink>
+          </li>
+          <li>
+<NavLink to="/logs">
               <Terminal size={18} strokeWidth={1.75} />
               <span>{t('nav.logs')}</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/settings">
+<NavLink to="/settings">
               <Settings size={18} strokeWidth={1.75} />
               <span>{t('nav.settings')}</span>
             </NavLink>
@@ -118,10 +126,11 @@ function MainApp() {
           {/* Card Body */}
           <div className="card-body">
             <Routes>
-              <Route path="/"         element={<Images />} />
-              <Route path="/logs"     element={<Logs />} />
-              <Route path="/stats"    element={<Stats />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/"             element={<Images />} />
+              <Route path="/local-images" element={<LocalImages />} />
+              <Route path="/logs"         element={<Logs />} />
+              <Route path="/stats"        element={<Stats />} />
+              <Route path="/settings"     element={<SettingsPage />} />
               {/* Docs routes - independent layout */}
               <Route path="/docs" element={<DocLayout />}>
                 <Route index element={<Introduction />} />
@@ -180,7 +189,9 @@ function AppContent() {
     <ConfigProvider>
       <ToastProvider>
         <NotificationProvider>
-          <MainApp />
+          <NavigationGuardProvider>
+            <MainApp />
+          </NavigationGuardProvider>
         </NotificationProvider>
       </ToastProvider>
     </ConfigProvider>

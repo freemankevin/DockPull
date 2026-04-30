@@ -3,9 +3,10 @@ import { User, ArrowRightFromLine, Key, Bell, Save, FlaskConical, CheckCircle, A
 import { useConfig } from '../context/ConfigContext'
 import { useToast } from '../context/ToastContext'
 import { useLanguage } from '../context/LanguageContext'
+import { useNavigationGuard } from '../context/NavigationGuardContext'
 import { webhookApi, authApi } from '../api'
 import DirectoryPicker from '../components/DirectoryPicker'
-import { TabId, TAB_TITLE_KEYS, TOKEN_REGISTRY_CONFIG_KEYS } from '../constants/settings'
+import { TabId, TAB_TITLE_KEYS, TOKEN_REGISTRY_CONFIG_KEYS, TokenRegistryId } from '../constants/settings'
 import ExportSettings from './settings/ExportSettings'
 import AccountSettings from './settings/AccountSettings'
 import TokenSettings from './settings/TokenSettings'
@@ -15,6 +16,7 @@ export default function Settings() {
   const { config, loading, updateConfig } = useConfig()
   const { showToast } = useToast()
   const { t } = useLanguage()
+  const { setHasUnsavedChanges, onSaveHandler } = useNavigationGuard()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<any>({})
   const [activeTab, setActiveTab] = useState<TabId>('account')
@@ -23,7 +25,7 @@ export default function Settings() {
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
   const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
   const [showPasswords, setShowPasswords] = useState({ old: false, new: false, confirm: false })
-  const [visibleTokens, setVisibleTokens] = useState<string[]>([])
+  const [visibleTokens, setVisibleTokens] = useState<TokenRegistryId[]>([])
   const [showAddToken, setShowAddToken] = useState(false)
 
   const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
@@ -35,14 +37,17 @@ export default function Settings() {
 
   const getValue = (key: string) => formData[key] ?? config?.[key as keyof typeof config]
 
-  const hasTokenConfig = (tokenId: string) => {
-    const checkKeysMap: Record<string, string[]> = {
+  const hasTokenConfig = (tokenId: TokenRegistryId) => {
+    const checkKeysMap: Record<TokenRegistryId, string[]> = {
       dockerhub: ['dockerhub_username', 'dockerhub_token'],
       ghcr: ['ghcr_token'],
       quay: ['quay_token'],
       acr: ['acr_username', 'acr_password'],
       ecr: ['ecr_access_key_id', 'ecr_secret_access_key'],
       gar: ['gar_token'],
+      harbor: ['harbor_url', 'harbor_username', 'harbor_password'],
+      tencentcloud: ['tencentcloud_username', 'tencentcloud_password'],
+      huaweicloud: ['huaweicloud_username', 'huaweicloud_password'],
     }
     const checkKeys = checkKeysMap[tokenId]
     if (!checkKeys) return false
@@ -54,7 +59,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (config && visibleTokens.length === 0) {
-      const configuredTokens = Object.keys(TOKEN_REGISTRY_CONFIG_KEYS).filter(id => hasTokenConfig(id))
+      const configuredTokens = (Object.keys(TOKEN_REGISTRY_CONFIG_KEYS) as TokenRegistryId[]).filter(id => hasTokenConfig(id))
       setVisibleTokens(configuredTokens)
     }
   }, [config])
@@ -84,7 +89,9 @@ export default function Settings() {
         showToast('success', t('settings.password.success'))
       }
 
-      await updateConfig({ ...config, ...formData })
+      if (Object.keys(formData).length > 0) {
+        await updateConfig({ ...config, ...formData })
+      }
       setFormData({})
       setSaveStatus('success')
       if (activeTab !== 'account') {
@@ -118,6 +125,50 @@ export default function Settings() {
   const handleSelectDir = (path: string) => {
     setFormData({ ...formData, export_path: path })
   }
+
+  const hasUnsavedChanges = () => {
+    if (!config) return false
+    return Object.keys(formData).length > 0
+  }
+
+  const handleSaveConfig = async () => {
+    try {
+      await updateConfig({ ...config, ...formData })
+      setFormData({})
+      setSaveStatus('success')
+      if (activeTab !== 'account') {
+        showToast('success', t('settings.saved'))
+      }
+      setTimeout(() => setSaveStatus('idle'), 2000)
+      return true
+    } catch (err: any) {
+      setSaveStatus('error')
+      const errorMsg = err.response?.data?.error || t('settings.failed')
+      showToast('error', errorMsg)
+      setTimeout(() => setSaveStatus('idle'), 2000)
+      return false
+    }
+  }
+
+  useEffect(() => {
+    onSaveHandler(handleSaveConfig)
+  }, [config, formData, activeTab])
+
+  useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges())
+  }, [formData, config])
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [formData, config])
 
   if (loading || !config) {
     return (

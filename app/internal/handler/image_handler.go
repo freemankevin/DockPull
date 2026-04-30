@@ -170,3 +170,116 @@ func (h *Handler) CheckPlatforms(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"platforms": platforms})
 }
+
+func (h *Handler) CheckAuthConfig(c *gin.Context) {
+	name := c.Query("name")
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
+		return
+	}
+
+	registry := detectRegistryFromName(name)
+	result := h.checkRegistryAuth(registry)
+
+	c.JSON(http.StatusOK, result)
+}
+
+func detectRegistryFromName(name string) string {
+	parts := strings.Split(name, "/")
+	if len(parts) == 1 {
+		return "docker.io"
+	}
+	firstPart := parts[0]
+	if strings.Contains(firstPart, ".") || firstPart == "localhost" {
+		return firstPart
+	}
+	return "docker.io"
+}
+
+func (h *Handler) checkRegistryAuth(registry string) gin.H {
+	result := gin.H{
+		"registry":     registry,
+		"needs_auth":   false,
+		"has_auth":     false,
+		"auth_type":    "",
+		"suggestion":   "",
+	}
+
+	switch registry {
+	case "ghcr.io":
+		result["needs_auth"] = true
+		result["auth_type"] = "ghcr_token"
+		if h.cfg.GhcrToken != "" {
+			result["has_auth"] = true
+		} else {
+			result["suggestion"] = "Please configure GHCR Token in Settings > Tokens"
+		}
+	case "docker.io", "registry.hub.docker.com":
+		if h.cfg.DockerHubUsername != "" && h.cfg.DockerHubToken != "" {
+			result["has_auth"] = true
+			result["needs_auth"] = true
+			result["auth_type"] = "dockerhub"
+		}
+	case "quay.io":
+		result["needs_auth"] = true
+		result["auth_type"] = "quay_token"
+		if h.cfg.QuayToken != "" {
+			result["has_auth"] = true
+		} else {
+			result["suggestion"] = "Please configure Quay Token in Settings > Tokens"
+		}
+	default:
+		if strings.Contains(registry, "azurecr.io") {
+			result["needs_auth"] = true
+			result["auth_type"] = "acr"
+			if h.cfg.AcrUsername != "" && h.cfg.AcrPassword != "" {
+				result["has_auth"] = true
+			} else {
+				result["suggestion"] = "Please configure Azure Container Registry credentials in Settings > Tokens"
+			}
+		} else if strings.HasSuffix(registry, ".amazonaws.com") || strings.HasPrefix(registry, "public.ecr.aws") {
+			result["needs_auth"] = true
+			result["auth_type"] = "ecr"
+			if h.cfg.EcrAccessKeyId != "" && h.cfg.EcrSecretAccessKey != "" {
+				result["has_auth"] = true
+			} else {
+				result["suggestion"] = "Please configure AWS ECR credentials in Settings > Tokens"
+			}
+		} else if strings.HasSuffix(registry, ".pkg.dev") || strings.HasPrefix(registry, "asia-east1-docker.pkg.dev") {
+			result["needs_auth"] = true
+			result["auth_type"] = "gar"
+			if h.cfg.GarToken != "" {
+				result["has_auth"] = true
+			} else {
+				result["suggestion"] = "Please configure Google Artifact Registry token in Settings > Tokens"
+			}
+		} else if strings.Contains(registry, "harbor") || (h.cfg.HarborUrl != "" && strings.HasPrefix(registry, h.cfg.HarborUrl)) {
+			result["needs_auth"] = true
+			result["auth_type"] = "harbor"
+			if h.cfg.HarborUsername != "" && h.cfg.HarborPassword != "" {
+				result["has_auth"] = true
+			} else {
+				result["suggestion"] = "Please configure Harbor credentials in Settings > Tokens"
+			}
+		} else if strings.HasSuffix(registry, ".tencentcloudcr.com") || strings.Contains(registry, "ccr.ccs.tencentyun.com") {
+			result["needs_auth"] = true
+			result["auth_type"] = "tencentcloud"
+			if h.cfg.TencentcloudUsername != "" && h.cfg.TencentcloudPassword != "" {
+				result["has_auth"] = true
+			} else {
+				result["suggestion"] = "Please configure Tencent Cloud Container Registry credentials in Settings > Tokens"
+			}
+		} else if strings.HasSuffix(registry, ".myhuaweicloud.com") || strings.Contains(registry, "swr.") {
+			result["needs_auth"] = true
+			result["auth_type"] = "huaweicloud"
+			if h.cfg.HuaweicloudUsername != "" && h.cfg.HuaweicloudPassword != "" {
+				result["has_auth"] = true
+			} else {
+				result["suggestion"] = "Please configure Huawei Cloud SWR credentials in Settings > Tokens"
+			}
+		}
+	}
+
+	return result
+}

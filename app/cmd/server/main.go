@@ -103,6 +103,36 @@ func main() {
 	// Step 5: Create config from settings
 	cfg := config.FromSettings(settings)
 
+	// Step 5.1: Auto-detect and configure container runtime
+	dockerAvailable, podmanAvailable := docker.DetectRuntime()
+	currentRuntime := cfg.ContainerRuntime
+	if currentRuntime == "" {
+		currentRuntime = "docker"
+	}
+
+	if currentRuntime == "docker" && !dockerAvailable && podmanAvailable {
+		cfg.ContainerRuntime = "podman"
+		settings.ContainerRuntime = "podman"
+		db.Exec(`UPDATE settings SET container_runtime = 'podman' WHERE id = 1`)
+		fmt.Printf("\033[33m%s [INFO] ⚠ Docker 不可用，自动切换到 Podman\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"))
+	} else if currentRuntime == "podman" && !podmanAvailable && dockerAvailable {
+		cfg.ContainerRuntime = "docker"
+		settings.ContainerRuntime = "docker"
+		db.Exec(`UPDATE settings SET container_runtime = 'docker' WHERE id = 1`)
+		fmt.Printf("\033[33m%s [INFO] ⚠ Podman 不可用，自动切换到 Docker\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"))
+	} else if !dockerAvailable && !podmanAvailable {
+		fmt.Printf("\033[31m%s [ERROR] ⚠ Docker 和 Podman 都不可用，请安装并启动容器运行时\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"))
+	}
+
+	if dockerAvailable || podmanAvailable {
+		fmt.Printf("\033[36m%s [INFO] 运行时检测: Docker=%v, Podman=%v, 使用: %s\033[0m\n",
+			time.Now().Format("2006-01-02 15:04:05"), dockerAvailable, podmanAvailable, cfg.ContainerRuntime)
+	}
+	stepStart = logStep("检测容器运行时", stepStart)
+
 	// Step 6: Initialize default user
 	authHandler := handler.NewAuthHandler(db)
 	if err := authHandler.InitDefaultUser(); err != nil {
@@ -169,8 +199,13 @@ func main() {
 		api.POST("/images/:id/pull", h.PullImage)
 		api.POST("/images/:id/export", h.ExportImage)
 		api.GET("/images/check-platforms", h.CheckPlatforms)
+		api.GET("/images/check-auth", h.CheckAuthConfig)
+		api.GET("/local-images", h.ListLocalImages)
+		api.DELETE("/local-images/:id", h.DeleteLocalImage)
+		api.POST("/local-images/:id/export", h.ExportLocalImage)
 		api.GET("/config", h.GetConfig)
 		api.PUT("/config", h.UpdateConfig)
+		api.GET("/config/detect-runtime", h.DetectRuntime)
 		api.GET("/browse", h.BrowseDirectory)
 		api.POST("/webhook/test", h.TestWebhook)
 		api.GET("/stats", h.GetStats)

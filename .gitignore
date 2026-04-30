@@ -146,9 +146,11 @@ server_optimized
 # Kilo CLI local config
 .kilo/
 
-# App specific - data and exports moved to root
+# App specific - data and exports
 data/
 exports/
+app/data/
+app/exports/
 app/server.exe
 
 # Windows temp files

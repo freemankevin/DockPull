@@ -71,7 +71,7 @@ export default function DocLayout() {
                 title={t('lang.switch')}
               >
                 <Languages size={18} />
-                <span className="doc-lang-label">{language === 'zh' ? '中文' : 'EN'}</span>
+                <span className="doc-lang-label">{language === 'zh' ? 'English' : '简体中文'}</span>
               </button>
             </div>
 

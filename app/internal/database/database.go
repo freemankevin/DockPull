@@ -40,6 +40,15 @@ func migrateDatabase(db *sql.DB) error {
 		"ecr_secret_access_key TEXT DEFAULT ''",
 		"ecr_region TEXT DEFAULT ''",
 		"gar_token TEXT DEFAULT ''",
+		"harbor_url TEXT DEFAULT ''",
+		"harbor_username TEXT DEFAULT ''",
+		"harbor_password TEXT DEFAULT ''",
+		"harbor_tls_cert TEXT DEFAULT ''",
+		"tencentcloud_username TEXT DEFAULT ''",
+		"tencentcloud_password TEXT DEFAULT ''",
+		"huaweicloud_username TEXT DEFAULT ''",
+		"huaweicloud_password TEXT DEFAULT ''",
+		"container_runtime TEXT DEFAULT 'docker'",
 	}
 
 	for _, column := range columns {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"docker-pull-manager/internal/database"
+	"docker-pull-manager/internal/docker"
 	"docker-pull-manager/internal/models"
 	"net/http"
 
@@ -20,6 +21,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		"default_platform":   h.cfg.DefaultPlatform,
 		"gzip_compression":   h.cfg.GzipCompression,
 		"ghcr_token":         h.cfg.GhcrToken,
+		"container_runtime":  h.cfg.ContainerRuntime,
 	})
 }
 
@@ -56,6 +58,9 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 		h.cfg.GzipCompression = req.GzipCompression
 	}
 	h.cfg.GhcrToken = req.GhcrToken
+	if req.ContainerRuntime != "" {
+		h.cfg.ContainerRuntime = req.ContainerRuntime
+	}
 
 	settings := &models.Settings{
 		ExportPath:       h.cfg.ExportPath,
@@ -68,6 +73,7 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 		DefaultPlatform:  h.cfg.DefaultPlatform,
 		GzipCompression:  h.cfg.GzipCompression,
 		GhcrToken:        h.cfg.GhcrToken,
+		ContainerRuntime: h.cfg.ContainerRuntime,
 	}
 
 	if err := database.UpdateSettings(h.db, settings); err != nil {
@@ -86,6 +92,7 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 		"default_platform":   h.cfg.DefaultPlatform,
 		"gzip_compression":   h.cfg.GzipCompression,
 		"ghcr_token":         h.cfg.GhcrToken,
+		"container_runtime":  h.cfg.ContainerRuntime,
 	})
 }
 
@@ -95,4 +102,25 @@ func (h *Handler) TestWebhook(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "webhook test sent"})
+}
+
+func (h *Handler) DetectRuntime(c *gin.Context) {
+	dockerAvailable, podmanAvailable := docker.DetectRuntime()
+	
+	currentRuntime := h.cfg.ContainerRuntime
+	if currentRuntime == "" {
+		currentRuntime = "docker"
+	}
+	
+	recommended := "docker"
+	if !dockerAvailable && podmanAvailable {
+		recommended = "podman"
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"docker_available":  dockerAvailable,
+		"podman_available":  podmanAvailable,
+		"current_runtime":   currentRuntime,
+		"recommended":       recommended,
+	})
 }

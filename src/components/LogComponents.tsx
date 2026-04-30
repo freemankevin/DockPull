@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Clock, Download, CheckCircle, AlertCircle, ArrowRightFromLine, ArrowRightLeft, ChevronDown, ChevronUp, Copy } from 'lucide-react'
+import { Plus, Clock, Download, CheckCircle, AlertCircle, ArrowRightFromLine, ArrowRightLeft, ChevronDown, ChevronUp, Copy, Trash2 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { ACTION_META_LABELS } from '../constants/logs'
 
@@ -13,6 +13,12 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   EXPORT_SUCCESS: <CheckCircle size={11} />,
   EXPORT_FAILED:  <AlertCircle size={11} />,
   PLATFORM_CHANGED: <ArrowRightLeft size={11} />,
+  LOCAL_DELETE_START:   <Trash2 size={11} />,
+  LOCAL_DELETE_SUCCESS: <CheckCircle size={11} />,
+  LOCAL_DELETE_FAILED:  <AlertCircle size={11} />,
+  LOCAL_EXPORT_START:   <ArrowRightFromLine size={11} />,
+  LOCAL_EXPORT_SUCCESS: <CheckCircle size={11} />,
+  LOCAL_EXPORT_FAILED:  <AlertCircle size={11} />,
 }
 
 const ACTION_LABEL_KEYS: Record<string, string> = {
@@ -25,6 +31,12 @@ const ACTION_LABEL_KEYS: Record<string, string> = {
   EXPORT_SUCCESS: 'action.exported',
   EXPORT_FAILED:  'action.failed',
   PLATFORM_CHANGED: 'action.changed',
+  LOCAL_DELETE_START:   'action.localDeleting',
+  LOCAL_DELETE_SUCCESS: 'action.localDeleted',
+  LOCAL_DELETE_FAILED:  'action.failed',
+  LOCAL_EXPORT_START:   'action.exporting',
+  LOCAL_EXPORT_SUCCESS: 'action.exported',
+  LOCAL_EXPORT_FAILED:  'action.failed',
 }
 
 export function ActionBadge({ action }: { action: string }) {
@@ -40,7 +52,7 @@ export function ActionBadge({ action }: { action: string }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '5px',
-      padding: '3px 10px', borderRadius: '20px',
+      padding: '3px 10px', borderRadius: 'var(--radius-card)',
       fontSize: '12px', fontWeight: 500,
       color: meta.color, background: meta.bg,
       border: `1px solid ${meta.border}`,

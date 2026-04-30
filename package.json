@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.1",
     "@types/prismjs": "^1.26.6",
     "axios": "^1.6.7",
     "lucide-react": "^0.323.0",

@@ -14,16 +14,36 @@ export const TAB_TITLE_KEYS: Record<TabId, { title: string; subtitle: string }> 
   webhook: { title: 'settings.webhook.title', subtitle: 'settings.webhook.subtitle' },
 }
 
-export const TOKEN_REGISTRY_CONFIG_KEYS = {
+export type TokenRegistryId = 'dockerhub' | 'ghcr' | 'quay' | 'acr' | 'ecr' | 'gar' | 'harbor' | 'tencentcloud' | 'huaweicloud'
+
+export type TokenRegistryField = {
+  key: string
+  placeholder: string
+  type: 'text' | 'password'
+}
+
+export type TokenRegistryConfig = {
+  id: TokenRegistryId
+  name: string
+  hint: string
+  fields: TokenRegistryField[]
+  checkKeys: string[]
+  hasCert?: boolean
+}
+
+export const TOKEN_REGISTRY_CONFIG_KEYS: Record<TokenRegistryId, TokenRegistryId> = {
   dockerhub: 'dockerhub',
   ghcr: 'ghcr',
   quay: 'quay',
   acr: 'acr',
   ecr: 'ecr',
   gar: 'gar',
+  harbor: 'harbor',
+  tencentcloud: 'tencentcloud',
+  huaweicloud: 'huaweicloud',
 }
 
-export const TOKEN_REGISTRY_CONFIG = {
+export const TOKEN_REGISTRY_CONFIG: Record<TokenRegistryId, TokenRegistryConfig> = {
   dockerhub: {
     id: 'dockerhub',
     name: 'Docker Hub',
@@ -81,5 +101,37 @@ export const TOKEN_REGISTRY_CONFIG = {
       { key: 'gar_token', placeholder: 'Google Cloud token or JSON key', type: 'password' },
     ],
     checkKeys: ['gar_token'],
+  },
+  harbor: {
+    id: 'harbor',
+    name: 'Harbor',
+    hint: 'Private Harbor registry. URL, username, password required. TLS certificate optional for self-signed certs.',
+    fields: [
+      { key: 'harbor_url', placeholder: 'https://harbor.example.com', type: 'text' },
+      { key: 'harbor_username', placeholder: 'Username', type: 'text' },
+      { key: 'harbor_password', placeholder: 'Password', type: 'password' },
+    ],
+    checkKeys: ['harbor_url', 'harbor_username', 'harbor_password'],
+    hasCert: true,
+  },
+  tencentcloud: {
+    id: 'tencentcloud',
+    name: 'Tencent Cloud Container Registry (tcr)',
+    hint: 'Username and password for Tencent Cloud Container Registry (ccr.ccs.tencentyun.com).',
+    fields: [
+      { key: 'tencentcloud_username', placeholder: 'Username', type: 'text' },
+      { key: 'tencentcloud_password', placeholder: 'Password', type: 'password' },
+    ],
+    checkKeys: ['tencentcloud_username', 'tencentcloud_password'],
+  },
+  huaweicloud: {
+    id: 'huaweicloud',
+    name: 'Huawei Cloud Container Registry (swr)',
+    hint: 'Username and password for Huawei Cloud Software Repository for Container (swr.cn-north-4.myhuaweicloud.com).',
+    fields: [
+      { key: 'huaweicloud_username', placeholder: 'Username', type: 'text' },
+      { key: 'huaweicloud_password', placeholder: 'Password', type: 'password' },
+    ],
+    checkKeys: ['huaweicloud_username', 'huaweicloud_password'],
   },
 }

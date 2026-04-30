@@ -41,11 +41,13 @@ export const imagesApi = {
   export: (id: number) => api.post(`/images/${id}/export`),
   logs: (id: number) => api.get(`/images/${id}/logs`),
   checkPlatforms: (name: string, tag: string) => api.get('/images/check-platforms', { params: { name, tag } }),
+  checkAuth: (name: string) => api.get('/images/check-auth', { params: { name } }),
 }
 
 export const configApi = {
   get: () => api.get('/config'),
   update: (data: any) => api.put('/config', data),
+  detectRuntime: () => api.get('/config/detect-runtime'),
 }
 
 export const browseApi = {
@@ -58,6 +60,12 @@ export const webhookApi = {
 
 export const statsApi = {
   get: () => api.get('/stats'),
+}
+
+export const localImagesApi = {
+  list: () => api.get('/local-images'),
+  delete: (id: string, force?: boolean) => api.delete(`/local-images/${id}`, { params: { force } }),
+  export: (id: string, exportPath?: string) => api.post(`/local-images/${id}/export`, { export_path: exportPath }),
 }
 
 export default api

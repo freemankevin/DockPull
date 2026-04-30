@@ -57,3 +57,13 @@ export interface Stats {
   failed: number
   pending: number
 }
+
+export interface LocalImage {
+  id: string
+  repo_tags: string[]
+  size: number
+  created_at: number
+  repository: string
+  tag: string
+  architecture: string
+}
