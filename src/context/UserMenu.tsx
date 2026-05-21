@@ -127,7 +127,7 @@ export function UserMenu() {
 
           <button className="user-menu-item" onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}>
             <Languages size={16} />
-            <span>{language === 'zh' ? 'English' : '简体中文'}</span>
+            <span>{language === 'zh' ? 'EN' : '中文'}</span>
           </button>
 
           <div className="user-menu-divider" />

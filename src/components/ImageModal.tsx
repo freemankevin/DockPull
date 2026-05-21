@@ -2,6 +2,30 @@ import { Loader2 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { PlatformOption, platformOptions } from './ImageComponents'
 
+function extractImageName(input: string): string {
+  const trimmed = input.trim()
+  const patterns = [
+    /^docker\s+pull\s+/i,
+    /^podman\s+pull\s+/i,
+    /^nerdctl\s+pull\s+/i,
+    /^crictl\s+pull\s+/i,
+    /^ctr\s+images?\s+pull\s+/i,
+  ]
+  for (const pattern of patterns) {
+    if (pattern.test(trimmed)) {
+      return trimmed.replace(pattern, '').trim()
+    }
+  }
+  return trimmed
+}
+
+function extractImageNames(text: string): string {
+  return text
+    .split('\n')
+    .map(line => extractImageName(line))
+    .join('\n')
+}
+
 interface ImageModalProps {
   showModal: boolean
   batchMode: boolean
@@ -72,7 +96,7 @@ export default function ImageModal({
                   className="form-control"
                   rows={6}
                   value={batchText}
-                  onChange={(e) => setBatchText(e.target.value)}
+                  onChange={(e) => setBatchText(extractImageNames(e.target.value))}
                   placeholder={'nginx:latest\nredis:7-alpine\npostgres:15'}
                   required
                 />
@@ -84,7 +108,7 @@ export default function ImageModal({
                   type="text"
                   className="form-control"
                   value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, fullName: extractImageName(e.target.value) })}
                   placeholder="nginx:latest"
                   required
                   autoFocus

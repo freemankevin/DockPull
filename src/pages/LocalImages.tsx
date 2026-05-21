@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Trash2, Download, RefreshCw, AlertTriangle, Clock, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { localImagesApi, operationsApi } from '../api'
+import { localImagesApi } from '../api'
 import { useLanguage } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
 import { useNotification } from '../context/NotificationContext'
 import { useConfig } from '../context/ConfigContext'
 import { RegistryIcon, PlatformBadge, TokenRegistryIcon } from '../components/ImageComponents'
 import { ExpandableText } from '../components/LogComponents'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { detectRegistry } from '../utils/imageUtils'
 import type { LocalImage } from '../types'
 
@@ -39,6 +40,7 @@ export default function LocalImages() {
   const [exporting, setExporting] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; imageId: string; repository: string; arch: string } | null>(null)
   const hasShownInitialError = useRef(false)
   const isFetchingRef = useRef(false)
 
@@ -86,35 +88,23 @@ export default function LocalImages() {
     }
   }, [showToast, t, addNotification])
 
-  const checkBusyStatus = useCallback(async () => {
-    try {
-      const res = await operationsApi.status()
-      const ops = res.data?.operations || {}
-      if (ops.pulling > 0 || ops.exporting > 0) {
-        setBusy(true)
-        setBusyMessage(`${ops.pulling} pulls, ${ops.exporting} exports in progress`)
-      } else {
-        setBusy(false)
-        setBusyMessage('')
-      }
-    } catch {
-    }
-  }, [])
-
   useEffect(() => {
     fetchImages(true)
     const interval = setInterval(() => {
-      checkBusyStatus()
       fetchImages(false)
     }, 30000)
     return () => clearInterval(interval)
-  }, [fetchImages, checkBusyStatus])
+  }, [fetchImages])
 
-  const handleDelete = async (imageId: string, repository: string, arch: string) => {
+  const handleDelete = (imageId: string, repository: string, arch: string) => {
     if (deleting) return
-    if (!window.confirm(t('localImages.deleteConfirm').replace('{image}', repository))) {
-      return
-    }
+    setConfirmDialog({ open: true, imageId, repository, arch })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog) return
+    const { imageId, repository, arch } = confirmDialog
+    setConfirmDialog(null)
     setDeleting(imageId)
     addNotification('info', `Deleting ${repository} (${arch})...`)
     try {
@@ -252,7 +242,7 @@ export default function LocalImages() {
                     </div>
                   </td>
                   <td>
-                    <PlatformBadge platform={`linux/${img.platform}`} />
+                    <PlatformBadge platform={img.platform.startsWith('linux/') ? img.platform : `linux/${img.platform}`} />
                   </td>
                   <td>
                     <span style={{
@@ -325,6 +315,19 @@ export default function LocalImages() {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmDialog?.open && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('modal.confirmDelete')}
+          message={t('localImages.deleteConfirm').replace('{image}', confirmDialog.repository)}
+          confirmText={t('localImages.delete')}
+          cancelText={t('modal.cancel')}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDialog(null)}
+          variant="danger"
+        />
       )}
     </div>
   )

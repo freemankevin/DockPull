@@ -129,6 +129,7 @@ func main() {
 				time.Now().Format("2006-01-02 15:04:05"), cfg.DockerHost)
 		} else if remoteHost := docker.DetectRemoteDockerHost(); remoteHost != "" {
 			autoDetectedHost = remoteHost
+			cfg.DockerHost = remoteHost
 			fmt.Printf("\033[32m%s [INFO] ✓ 本地未检测到 Docker/Podman，但自动探测到远程 Docker（WSL）: %s\033[0m\n",
 				time.Now().Format("2006-01-02 15:04:05"), remoteHost)
 		} else {
@@ -228,6 +229,25 @@ func main() {
 		api.POST("/webhook/test", h.TestWebhook)
 		api.POST("/tokens/test", h.TestTokenAuth)
 		api.GET("/stats", h.GetStats)
+
+		// Build routes
+		api.GET("/builds", h.ListBuilds)
+		api.POST("/builds", h.BuildImage)
+		api.DELETE("/builds/:id", h.DeleteBuild)
+
+		// Compose routes
+		api.GET("/compose", h.ListComposeProjects)
+		api.POST("/compose/up", h.ComposeUp)
+		api.POST("/compose/down", h.ComposeDown)
+		api.GET("/compose/status", h.ComposeStatus)
+
+		// Container routes
+		api.GET("/containers", h.ListContainers)
+		api.POST("/containers/:id/start", h.StartContainer)
+		api.POST("/containers/:id/stop", h.StopContainer)
+		api.POST("/containers/:id/restart", h.RestartContainer)
+		api.DELETE("/containers/:id", h.RemoveContainer)
+		api.GET("/containers/:id/logs", h.GetContainerLogs)
 	}
 	stepStart = logStep("配置路由", stepStart)
 

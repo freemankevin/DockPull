@@ -19,6 +19,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 )
 
 type DockerService struct {
@@ -48,37 +49,67 @@ func (s *DockerService) ResetClient() {
 
 func (s *DockerService) getClient() (*client.Client, error) {
 	s.cliOnce.Do(func() {
-		opts := []client.Opt{client.WithAPIVersionNegotiation()}
+		// Build a list of candidate hosts to try, in order of preference
+		candidates := []string{}
 
 		if s.cfg.ContainerRuntime == "podman" {
 			if podmanHost := detectPodmanSocket(); podmanHost != "" {
-				opts = append(opts, client.WithHost(podmanHost))
+				candidates = append(candidates, podmanHost)
 			}
 		}
 
 		if host := os.Getenv("CONTAINER_HOST"); host != "" {
-			opts = append(opts, client.WithHost(host))
-		} else if s.cfg.DockerHost != "" {
-			opts = append(opts, client.WithHost(s.cfg.DockerHost))
-		} else if runtime.GOOS == "windows" {
-			if dockerHost := detectWindowsDockerSocket(); dockerHost != "" {
-				opts = append(opts, client.WithHost(dockerHost))
+			candidates = append(candidates, host)
+		}
+
+		if s.cfg.DockerHost != "" {
+			candidates = append(candidates, s.cfg.DockerHost)
+		}
+
+		if runtime.GOOS == "windows" {
+			// Try Docker Desktop named pipe first
+			candidates = append(candidates, "npipe:////./pipe/docker_engine")
+			// Then try WSL2 TCP
+			if wslHost := detectWSL2Docker(); wslHost != "" {
+				candidates = append(candidates, wslHost)
 			}
 		}
 
-		opts = append(opts, client.FromEnv)
-		cli, err := client.NewClientWithOpts(opts...)
-		if err != nil {
-			s.cliErr = err
-			return
+		var lastErr error
+		for _, host := range candidates {
+			opts := []client.Opt{client.WithAPIVersionNegotiation()}
+			if host != "" {
+				opts = append(opts, client.WithHost(host))
+			}
+			opts = append(opts, client.FromEnv)
+
+			cli, err := client.NewClientWithOpts(opts...)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+
+			// Test connectivity with a short timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_, err = cli.Ping(ctx)
+			cancel()
+
+			if err == nil {
+				s.cli = cli
+				return
+			}
+
+			cli.Close()
+			lastErr = err
 		}
 
-		// Explicit API version negotiation for remote daemons (WSL2 etc.)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		cli.NegotiateAPIVersion(ctx)
-		cancel()
-
-		s.cli = cli
+		// All candidates failed; do not fallback to a default client on Windows
+		// because it will silently pick the non-existent Docker Desktop named pipe.
+		if lastErr != nil {
+			s.cliErr = lastErr
+		} else {
+			s.cliErr = fmt.Errorf("no reachable Docker/Podman host found")
+		}
 	})
 	return s.cli, s.cliErr
 }
@@ -159,13 +190,18 @@ func detectPodmanSocket() string {
 }
 
 func detectWindowsDockerSocket() string {
-	// 1. Try WSL2 Docker via TCP (Docker Engine in WSL2 Ubuntu)
+	// 1. Try Docker Desktop named pipe first (most common on Windows)
+	// Note: Docker SDK will handle connection errors later
+	if runtime.GOOS == "windows" {
+		return "npipe:////./pipe/docker_engine"
+	}
+
+	// 2. Fallback to WSL2 Docker via TCP
 	if wslHost := detectWSL2Docker(); wslHost != "" {
 		return wslHost
 	}
 
-	// 2. Fallback to Docker Desktop named pipe
-	return "npipe:////./pipe/docker_engine"
+	return ""
 }
 
 func detectWSL2Docker() string {
@@ -209,6 +245,22 @@ func IsDockerReachable(host string) bool {
 	return true
 }
 
+// isDockerHostReachable checks if a Docker host is reachable.
+// For TCP hosts it dials the port; for npipe/unix it trusts the user config.
+func isDockerHostReachable(host string) bool {
+	if strings.HasPrefix(host, "tcp://") {
+		parsed := strings.TrimPrefix(host, "tcp://")
+		conn, err := net.DialTimeout("tcp", parsed, 2*time.Second)
+		if err != nil {
+			return false
+		}
+		conn.Close()
+		return true
+	}
+	// Non-TCP hosts (npipe, unix socket) are trusted directly
+	return true
+}
+
 // DetectRemoteDockerHost probes for external Docker hosts (WSL2, etc.)
 // Returns empty string if none found
 func DetectRemoteDockerHost() string {
@@ -224,6 +276,14 @@ func (s *DockerService) PullImage(ctx context.Context, fullName, platform string
 	cli, err := s.getClient()
 	if err != nil {
 		return err
+	}
+
+	// If a specific platform is requested, remove any local image with the
+	// same name:tag first. Docker's default graph driver can only store one
+	// platform per tag; without removal Docker may report "up to date" and
+	// skip re-pulling a different platform.
+	if platform != "" {
+		_, _ = cli.ImageRemove(ctx, fullName, types.ImageRemoveOptions{Force: true})
 	}
 
 	options := types.ImagePullOptions{}
@@ -746,4 +806,305 @@ func (s *DockerService) ExportLocalImage(ctx context.Context, repoTag string, ar
 	}
 
 	return fullExportPath, nil
+}
+
+// ── Build ──
+
+func (s *DockerService) BuildImage(ctx context.Context, dockerfilePath, tag string, buildArgs map[string]string) error {
+	runtimeCmd := "docker"
+	if s.cfg.ContainerRuntime != "" {
+		runtimeCmd = s.cfg.ContainerRuntime
+	}
+
+	args := []string{"build", "-t", tag, "-f", dockerfilePath}
+	for k, v := range buildArgs {
+		args = append(args, "--build-arg", fmt.Sprintf("%s=%s", k, v))
+	}
+	contextDir := filepath.Dir(dockerfilePath)
+	args = append(args, contextDir)
+
+	cmd := exec.CommandContext(ctx, runtimeCmd, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("build failed: %v\nOutput: %s", err, string(output))
+	}
+	return nil
+}
+
+// ── Containers ──
+
+type Container struct {
+	ID      string   `json:"id"`
+	Names   []string `json:"names"`
+	Image   string   `json:"image"`
+	Command string   `json:"command"`
+	Created int64    `json:"created"`
+	Status  string   `json:"status"`
+	State   string   `json:"state"`
+	Ports   []Port   `json:"ports"`
+	Labels  map[string]string `json:"labels"`
+	SizeRw  int64    `json:"size_rw"`
+	SizeRootFs int64 `json:"size_root_fs"`
+}
+
+type Port struct {
+	IP          string `json:"ip"`
+	PrivatePort uint16 `json:"private_port"`
+	PublicPort  uint16 `json:"public_port"`
+	Type        string `json:"type"`
+}
+
+func (s *DockerService) ListContainers(ctx context.Context, all bool) ([]Container, error) {
+	cli, err := s.getClient()
+	if err != nil {
+		return nil, err
+	}
+
+	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: all})
+	if err != nil {
+		return nil, s.enrichLocalImageError(err)
+	}
+
+	result := make([]Container, 0, len(containers))
+	for _, c := range containers {
+		ports := make([]Port, 0, len(c.Ports))
+		for _, p := range c.Ports {
+			ports = append(ports, Port{
+				IP:          p.IP,
+				PrivatePort: p.PrivatePort,
+				PublicPort:  p.PublicPort,
+				Type:        p.Type,
+			})
+		}
+		names := c.Names
+		for i := range names {
+			names[i] = strings.TrimPrefix(names[i], "/")
+		}
+		result = append(result, Container{
+			ID:      c.ID,
+			Names:   names,
+			Image:   c.Image,
+			Command: c.Command,
+			Created: c.Created,
+			Status:  c.Status,
+			State:   c.State,
+			Ports:   ports,
+			Labels:  c.Labels,
+			SizeRw:  c.SizeRw,
+			SizeRootFs: c.SizeRootFs,
+		})
+	}
+	return result, nil
+}
+
+func (s *DockerService) StartContainer(ctx context.Context, id string) error {
+	cli, err := s.getClient()
+	if err != nil {
+		return err
+	}
+	return cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
+}
+
+func (s *DockerService) StopContainer(ctx context.Context, id string, timeout *time.Duration) error {
+	cli, err := s.getClient()
+	if err != nil {
+		return err
+	}
+	return cli.ContainerStop(ctx, id, timeout)
+}
+
+func (s *DockerService) RestartContainer(ctx context.Context, id string, timeout *time.Duration) error {
+	cli, err := s.getClient()
+	if err != nil {
+		return err
+	}
+	return cli.ContainerRestart(ctx, id, timeout)
+}
+
+func (s *DockerService) RemoveContainer(ctx context.Context, id string, force bool) error {
+	cli, err := s.getClient()
+	if err != nil {
+		return err
+	}
+	return cli.ContainerRemove(ctx, id, types.ContainerRemoveOptions{Force: force})
+}
+
+func (s *DockerService) GetContainerLogs(ctx context.Context, id string, tail int) (string, error) {
+	cli, err := s.getClient()
+	if err != nil {
+		return "", err
+	}
+
+	if tail <= 0 {
+		tail = 100
+	}
+
+	options := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       fmt.Sprintf("%d", tail),
+		Timestamps: false,
+	}
+
+	reader, err := cli.ContainerLogs(ctx, id, options)
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+
+	// Docker multiplexes stdout/stderr with an 8-byte header
+	// stdcopy.StdCopy strips the headers
+	var buf strings.Builder
+	_, err = stdcopy.StdCopy(&buf, &buf, reader)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// ── Compose ──
+
+type ComposeProject struct {
+	Name     string           `json:"name"`
+	Path     string           `json:"path"`
+	Status   string           `json:"status"`
+	Services []ComposeService `json:"services"`
+}
+
+type ComposeService struct {
+	Name   string `json:"name"`
+	Image  string `json:"image"`
+	Status string `json:"status"`
+	State  string `json:"state"`
+	Ports  string `json:"ports"`
+}
+
+func (s *DockerService) ListComposeProjects(ctx context.Context, scanPath string) ([]ComposeProject, error) {
+	if scanPath == "" {
+		scanPath = "."
+	}
+
+	projects := []ComposeProject{}
+	err := filepath.Walk(scanPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		name := info.Name()
+		if name != "docker-compose.yml" && name != "docker-compose.yaml" && name != "compose.yml" && name != "compose.yaml" {
+			return nil
+		}
+		dir := filepath.Dir(path)
+		projectName := filepath.Base(dir)
+		projects = append(projects, ComposeProject{
+			Name:   projectName,
+			Path:   path,
+			Status: "unknown",
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Get status for each project
+	for i := range projects {
+		services, err := s.ComposeStatus(ctx, projects[i].Path)
+		if err == nil {
+			projects[i].Services = services
+			if len(services) > 0 {
+				running := 0
+				for _, svc := range services {
+					if svc.State == "running" {
+						running++
+					}
+				}
+				if running == len(services) {
+					projects[i].Status = "running"
+				} else if running > 0 {
+					projects[i].Status = "partial"
+				} else {
+					projects[i].Status = "stopped"
+				}
+			}
+		}
+	}
+
+	return projects, nil
+}
+
+func (s *DockerService) ComposeUp(ctx context.Context, projectPath string) error {
+	runtimeCmd := "docker"
+	if s.cfg.ContainerRuntime != "" {
+		runtimeCmd = s.cfg.ContainerRuntime
+	}
+
+	cmd := exec.CommandContext(ctx, runtimeCmd, "compose", "-f", projectPath, "up", "-d")
+	cmd.Dir = filepath.Dir(projectPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("compose up failed: %v\nOutput: %s", err, string(output))
+	}
+	return nil
+}
+
+func (s *DockerService) ComposeDown(ctx context.Context, projectPath string) error {
+	runtimeCmd := "docker"
+	if s.cfg.ContainerRuntime != "" {
+		runtimeCmd = s.cfg.ContainerRuntime
+	}
+
+	cmd := exec.CommandContext(ctx, runtimeCmd, "compose", "-f", projectPath, "down")
+	cmd.Dir = filepath.Dir(projectPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("compose down failed: %v\nOutput: %s", err, string(output))
+	}
+	return nil
+}
+
+func (s *DockerService) ComposeStatus(ctx context.Context, projectPath string) ([]ComposeService, error) {
+	runtimeCmd := "docker"
+	if s.cfg.ContainerRuntime != "" {
+		runtimeCmd = s.cfg.ContainerRuntime
+	}
+
+	cmd := exec.CommandContext(ctx, runtimeCmd, "compose", "-f", projectPath, "ps", "--format", "json")
+	cmd.Dir = filepath.Dir(projectPath)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("compose ps failed: %v", err)
+	}
+
+	// docker compose ps --format json outputs JSON array or lines of JSON objects
+	var services []ComposeService
+	trimmed := strings.TrimSpace(string(output))
+	if trimmed == "" {
+		return services, nil
+	}
+
+	if trimmed[0] == '[' {
+		// JSON array
+		if err := json.Unmarshal(output, &services); err != nil {
+			return nil, err
+		}
+		return services, nil
+	}
+
+	// Lines of JSON objects
+	lines := strings.Split(trimmed, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var svc ComposeService
+		if err := json.Unmarshal([]byte(line), &svc); err != nil {
+			continue
+		}
+		services = append(services, svc)
+	}
+	return services, nil
 }

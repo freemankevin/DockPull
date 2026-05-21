@@ -1,7 +1,10 @@
-import { Package, Settings, BarChart3, Terminal, ArrowUpRight, MessageSquare, HardDrive } from 'lucide-react'
-import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
+import { Package, Settings, BarChart3, Terminal, ArrowUpRight, MessageSquare, HardDrive, Hammer, FolderGit, Container } from 'lucide-react'
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import Images from './pages/Images'
 import LocalImages from './pages/LocalImages'
+import Builds from './pages/Builds'
+import Compose from './pages/Compose'
+import Containers from './pages/Containers'
 import SettingsPage from './pages/Settings'
 import Stats from './pages/Stats'
 import Logs from './pages/Logs'
@@ -33,102 +36,129 @@ import './App.css'
 
 function MainApp() {
   const { t, language } = useLanguage()
-  
+  const location = useLocation()
+  const isDocs = location.pathname.startsWith('/docs')
+
   return (
     <div className="app-layout">
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
-        <div className="logo">
-          <img src="/logo.png" alt="Cove" className="logo-image" />
-        </div>
+      {!isDocs && (
+        <aside className="sidebar">
+          <div className="logo">
+            <img src="/logo.png" alt="Cove" className="logo-image" />
+          </div>
 
-        <ul className="nav-links">
-          <li className="nav-top-divider">
-<NavLink to="/stats">
-              <BarChart3 size={18} strokeWidth={1.75} />
-              <span>{t('nav.overview')}</span>
-            </NavLink>
-          </li>
-          <li>
-<NavLink to="/" end>
-              <Package size={18} strokeWidth={1.75} />
-              <span>{t('nav.images')}</span>
-            </NavLink>
-          </li>
-          <li>
-<NavLink to="/local-images">
-              <HardDrive size={18} strokeWidth={1.75} />
-              <span>{t('nav.localImages')}</span>
-            </NavLink>
-          </li>
-          <li>
-<NavLink to="/logs">
-              <Terminal size={18} strokeWidth={1.75} />
-              <span>{t('nav.logs')}</span>
-            </NavLink>
-          </li>
-          <li>
-<NavLink to="/settings">
-              <Settings size={18} strokeWidth={1.75} />
-              <span>{t('nav.settings')}</span>
-            </NavLink>
-          </li>
-          <li className="nav-divider">
-            <a
-              href="/docs"
-              className="docs-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
-              <span>{t('nav.docs')}</span>
-              <ArrowUpRight size={14} strokeWidth={2} className="docs-link-icon ml-[3px]" />
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://github.com/freemankevin/Cove/issues"
-              className="docs-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MessageSquare size={18} strokeWidth={1.75} />
-              <span>{t('nav.support')}</span>
-              <ArrowUpRight size={14} strokeWidth={2} className="docs-link-icon ml-[3px]" />
-            </a>
-          </li>
-        </ul>
+          <ul className="nav-links">
+            <li className="nav-top-divider">
+  <NavLink to="/stats">
+                <BarChart3 size={18} strokeWidth={1.75} />
+                <span>{t('nav.overview')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/" end>
+                <Package size={18} strokeWidth={1.75} />
+                <span>{t('nav.images')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/local-images">
+                <HardDrive size={18} strokeWidth={1.75} />
+                <span>{t('nav.localImages')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/builds">
+                <Hammer size={18} strokeWidth={1.75} />
+                <span>{t('nav.builds')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/compose">
+                <FolderGit size={18} strokeWidth={1.75} />
+                <span>{t('nav.compose')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/containers">
+                <Container size={18} strokeWidth={1.75} />
+                <span>{t('nav.containers')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/logs">
+                <Terminal size={18} strokeWidth={1.75} />
+                <span>{t('nav.logs')}</span>
+              </NavLink>
+            </li>
+            <li>
+  <NavLink to="/settings">
+                <Settings size={18} strokeWidth={1.75} />
+                <span>{t('nav.settings')}</span>
+              </NavLink>
+            </li>
+            <li className="nav-divider">
+              <a
+                href="/docs"
+                className="docs-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path d="M14 2v5a1 1 0 0 0 1 1h5" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" /></svg>
+                <span>{t('nav.docs')}</span>
+                <ArrowUpRight size={14} strokeWidth={2} className="docs-link-icon ml-[3px]" />
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://github.com/freemankevin/Cove/issues"
+                className="docs-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageSquare size={18} strokeWidth={1.75} />
+                <span>{t('nav.support')}</span>
+                <ArrowUpRight size={14} strokeWidth={2} className="docs-link-icon ml-[3px]" />
+              </a>
+            </li>
+          </ul>
 
-        <div className="sidebar-footer">
-          <UserMenu />
-        </div>
-      </aside>
+          <div className="sidebar-footer">
+            <UserMenu />
+          </div>
+        </aside>
+      )}
 
       {/* ── Main Wrapper (右侧容器，带 margin) ── */}
-      <main className="main-wrapper">
+      <main className={`main-wrapper ${isDocs ? 'main-wrapper-docs' : ''}`}>
         {/* 独立的顶部通知区域 */}
-        <div className="top-bar">
-          <NotificationBell />
-          <div className="top-bar-divider"></div>
-          <div className="top-bar-date">
-            {new Date().toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US', {
-              year: 'numeric',
-              month: language === 'zh' ? 'long' : 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
+        {!isDocs && (
+          <div className="top-bar">
+            <NotificationBell />
+            <div className="top-bar-divider"></div>
+            <div className="top-bar-date">
+              {new Date().toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US', {
+                year: 'numeric',
+                month: language === 'zh' ? 'long' : 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── Content Card (白色卡片容器) ── */}
-        <div className="content-card">
+        <div className={`content-card ${isDocs ? 'content-card-docs' : ''}`}>
           {/* Card Body */}
-          <div className="card-body">
+          <div className={`card-body ${isDocs ? 'card-body-docs' : ''}`}>
             <Routes>
               <Route path="/"             element={<Images />} />
               <Route path="/images"       element={<Images />} />
               <Route path="/local-images" element={<LocalImages />} />
+              <Route path="/builds"       element={<Builds />} />
+              <Route path="/compose"      element={<Compose />} />
+              <Route path="/containers"   element={<Containers />} />
               <Route path="/logs"         element={<Logs />} />
               <Route path="/stats"        element={<Stats />} />
               <Route path="/settings"     element={<SettingsPage />} />

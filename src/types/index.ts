@@ -90,3 +90,55 @@ export interface LocalImage {
   tag: string
   platform: string
 }
+
+export interface BuildTask {
+  id: string
+  repo_tags: string[]
+  size: number
+  created_at: number
+  repository: string
+  tag: string
+  platform: string
+}
+
+export interface BuildRequest {
+  dockerfile_path: string
+  tag: string
+  build_args?: Record<string, string>
+}
+
+export interface ComposeProject {
+  name: string
+  path: string
+  status: string
+  services: ComposeService[]
+}
+
+export interface ComposeService {
+  name: string
+  image: string
+  status: string
+  state: string
+  ports: string
+}
+
+export interface Container {
+  id: string
+  names: string[]
+  image: string
+  command: string
+  created: number
+  status: string
+  state: string
+  ports: ContainerPort[]
+  labels: Record<string, string>
+  size_rw: number
+  size_root_fs: number
+}
+
+export interface ContainerPort {
+  ip: string
+  private_port: number
+  public_port: number
+  type: string
+}

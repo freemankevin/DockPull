@@ -103,4 +103,26 @@ export const operationsApi = {
   status: () => api.get('/operations/status'),
 }
 
+export const buildsApi = {
+  list: () => longTimeoutApi.get('/builds'),
+  build: (data: any) => longTimeoutApi.post('/builds', data),
+  delete: (id: string, force?: boolean) => longTimeoutApi.delete(`/builds/${id}`, { params: { force } }),
+}
+
+export const composeApi = {
+  list: (path?: string) => api.get('/compose', { params: { path } }),
+  up: (path: string) => api.post('/compose/up', null, { params: { path } }),
+  down: (path: string) => api.post('/compose/down', null, { params: { path } }),
+  status: (path: string) => api.get('/compose/status', { params: { path } }),
+}
+
+export const containersApi = {
+  list: (all?: boolean) => api.get('/containers', { params: { all } }),
+  start: (id: string) => api.post(`/containers/${id}/start`),
+  stop: (id: string, timeout?: number) => api.post(`/containers/${id}/stop`, null, { params: { timeout } }),
+  restart: (id: string, timeout?: number) => api.post(`/containers/${id}/restart`, null, { params: { timeout } }),
+  remove: (id: string, force?: boolean) => api.delete(`/containers/${id}`, { params: { force } }),
+  logs: (id: string, tail?: number) => api.get(`/containers/${id}/logs`, { params: { tail } }),
+}
+
 export default api

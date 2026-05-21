@@ -34,16 +34,6 @@ func (h *Handler) GetOperationStatus(c *gin.Context) {
 }
 
 func (h *Handler) ListLocalImages(c *gin.Context) {
-	if h.imageService.IsBusy() {
-		ops := h.imageService.GetActiveOperations()
-		c.JSON(http.StatusAccepted, gin.H{
-			"status":     "busy",
-			"message":    fmt.Sprintf("Container runtime is busy: %d pulls, %d exports in progress. Please wait...", ops["pulling"], ops["exporting"]),
-			"operations": ops,
-		})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 

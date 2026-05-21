@@ -468,6 +468,10 @@ body, * {
   gap: 10px;
 }
 
+.main-wrapper-docs {
+  margin-left: 10px;
+}
+
 /* ═══════════════════════════════════════════════════════════
    Top Bar (独立顶部区域)
 ═══════════════════════════════════════════════════════════ */
@@ -526,6 +530,20 @@ body, * {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* Docs layout - remove card border/padding for full-screen docs */
+.content-card-docs {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.card-body-docs {
+  padding: 0;
+  overflow-y: visible;
 }
 
 .content-center {
@@ -949,10 +967,10 @@ body, * {
   color: #fff;
   border-color: var(--purple-600);
   box-shadow: 0 1px 3px rgba(133, 59, 206, 0.35);
-  width: 80px;
+  min-width: 80px;
   height: 36px;
   border-radius: var(--radius-card);
-  padding: 0;
+  padding: 0 14px;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -1589,7 +1607,7 @@ select.form-control {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-card);
   width: 100%;
-  max-width: 520px;
+  max-width: 680px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   box-shadow: var(--shadow-xl);

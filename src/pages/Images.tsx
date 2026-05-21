@@ -58,30 +58,34 @@ export default function Images() {
       const firstImage = batchMode ? batchText.split('\n')[0].trim() : formData.fullName
       
       if (firstImage) {
-        const { name } = parseImageName(firstImage)
-        try {
-          const authRes = await imagesApi.checkAuth(name)
-          const authData = authRes.data
-          if (authData.needs_auth && !authData.has_auth) {
-            showToast('warning', t('toast.authRequired').replace('{registry}', authData.registry))
-            addNotification('warning', authData.suggestion || `Please configure authentication for ${authData.registry} in Settings > Tokens`)
-          }
-        } catch {
-        }
-      }
-
-      if (firstImage && platformsToPull.includes('linux/arm64')) {
         const { name, tag } = parseImageName(firstImage)
-        try {
-          const checkRes = await imagesApi.checkPlatforms(name, tag)
-          const supportedPlatforms = checkRes.data.platforms || []
-          if (!supportedPlatforms.includes('linux/arm64')) {
-            showToast('info', t('toast.imageNoArm64'))
-            platformsToPull = platformsToPull.filter(p => p !== 'linux/arm64')
-          }
-        } catch {
-          showToast('info', t('toast.unableVerify'))
+        const checks: Promise<void>[] = []
+
+        checks.push(
+          imagesApi.checkAuth(name).then(authRes => {
+            const authData = authRes.data
+            if (authData.needs_auth && !authData.has_auth) {
+              showToast('warning', t('toast.authRequired').replace('{registry}', authData.registry))
+              addNotification('warning', authData.suggestion || `Please configure authentication for ${authData.registry} in Settings > Tokens`)
+            }
+          }).catch(() => {})
+        )
+
+        if (platformsToPull.includes('linux/arm64')) {
+          checks.push(
+            imagesApi.checkPlatforms(name, tag).then(checkRes => {
+              const supportedPlatforms = checkRes.data.platforms || []
+              if (!supportedPlatforms.includes('linux/arm64')) {
+                showToast('info', t('toast.imageNoArm64'))
+                platformsToPull = platformsToPull.filter(p => p !== 'linux/arm64')
+              }
+            }).catch(() => {
+              showToast('info', t('toast.unableVerify'))
+            })
+          )
         }
+
+        await Promise.all(checks)
       }
 
       let addedCount = 0
